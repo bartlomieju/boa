@@ -1,5 +1,4 @@
 use crate::{
-    builtins::function::FunctionFlags,
     environment::lexical_environment::VariableScope,
     exec::Executable,
     gc::{Finalize, Trace},
@@ -92,7 +91,8 @@ impl Executable for FunctionDecl {
             self.name(),
             self.parameters().to_vec(),
             self.body().to_vec(),
-            FunctionFlags::CONSTRUCTABLE,
+            true,
+            false,
         )?;
 
         if context.has_binding(self.name()) {

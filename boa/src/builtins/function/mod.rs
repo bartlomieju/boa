@@ -13,7 +13,7 @@
 
 use crate::object::PROTOTYPE;
 use crate::{
-    builtins::{Array, BuiltIn},
+    builtins::BuiltIn,
     environment::lexical_environment::Environment,
     gc::{custom_trace, empty_trace, Finalize, Trace},
     object::{ConstructorBuilder, FunctionBuilder, GcObject, Object, ObjectData},
@@ -21,7 +21,7 @@ use crate::{
     syntax::ast::node::{FormalParameter, RcStatementList},
     BoaProfiler, Context, Result, Value,
 };
-use bitflags::bitflags;
+
 use std::fmt::{self, Debug};
 use std::rc::Rc;
 
@@ -53,30 +53,6 @@ impl Debug for BuiltInFunction {
     }
 }
 
-bitflags! {
-    #[derive(Finalize, Default)]
-    pub struct FunctionFlags: u8 {
-        const CONSTRUCTABLE = 0b0000_0010;
-        const LEXICAL_THIS_MODE = 0b0000_0100;
-    }
-}
-
-impl FunctionFlags {
-    #[inline]
-    pub(crate) fn is_constructable(&self) -> bool {
-        self.contains(Self::CONSTRUCTABLE)
-    }
-
-    #[inline]
-    pub(crate) fn is_lexical_this_mode(&self) -> bool {
-        self.contains(Self::LEXICAL_THIS_MODE)
-    }
-}
-
-unsafe impl Trace for FunctionFlags {
-    empty_trace!();
-}
-
 /// Boa representation of a Function Object.
 ///
 /// FunctionBody is specific to this interpreter, it will either be Rust code or JavaScript code (AST Node)
@@ -93,9 +69,15 @@ pub enum Function {
         constructable: bool,
     },
     Ordinary {
-        flags: FunctionFlags,
+        constructable: bool,
+        lexical_this_mode: bool,
         body: RcStatementList,
         params: Box<[FormalParameter]>,
+        environment: Environment,
+    },
+    #[cfg(feature = "vm")]
+    VmOrdinary {
+        code: gc::Gc<crate::vm::CodeBlock>,
         environment: Environment,
     },
 }
@@ -114,20 +96,26 @@ unsafe impl Trace for Function {
             Function::Ordinary { environment, .. } => {
                 mark(environment);
             }
+            #[cfg(feature = "vm")]
+            Function::VmOrdinary { code, environment } => {
+                mark(code);
+                mark(environment);
+            }
         }
     });
 }
 
 impl Function {
     // Adds the final rest parameters to the Environment as an array
+    #[cfg(not(feature = "vm"))]
     pub(crate) fn add_rest_param(
-        &self,
         param: &FormalParameter,
         index: usize,
         args_list: &[Value],
         context: &mut Context,
         local_env: &Environment,
     ) {
+        use crate::builtins::Array;
         // Create array of values
         let array = Array::new_array(context);
         Array::add_to_array_object(&array, args_list.get(index..).unwrap_or_default(), context)
@@ -147,7 +135,6 @@ impl Function {
 
     // Adds an argument to the environment
     pub(crate) fn add_arguments_to_environment(
-        &self,
         param: &FormalParameter,
         value: Value,
         local_env: &Environment,
@@ -169,7 +156,9 @@ impl Function {
         match self {
             Self::Native { constructable, .. } => *constructable,
             Self::Closure { constructable, .. } => *constructable,
-            Self::Ordinary { flags, .. } => flags.is_constructable(),
+            Self::Ordinary { constructable, .. } => *constructable,
+            #[cfg(feature = "vm")]
+            Self::VmOrdinary { code, .. } => code.constructable,
         }
     }
 }

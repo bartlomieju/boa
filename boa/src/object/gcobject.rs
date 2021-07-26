@@ -2,22 +2,13 @@
 //!
 //! The `GcObject` is a garbage collected Object.
 
-use super::{NativeObject, Object, PROTOTYPE};
+use super::{NativeObject, Object};
 use crate::{
-    builtins::function::{
-        create_unmapped_arguments_object, ClosureFunction, Function, NativeFunction,
-    },
     context::StandardConstructor,
-    environment::{
-        environment_record_trait::EnvironmentRecordTrait,
-        function_environment_record::{BindingStatus, FunctionEnvironmentRecord},
-        lexical_environment::Environment,
-    },
     property::{AccessorDescriptor, Attribute, DataDescriptor, PropertyDescriptor, PropertyKey},
     symbol::WellKnownSymbols,
-    syntax::ast::node::RcStatementList,
     value::PreferredType,
-    Context, Executable, Result, Value,
+    Context, Result, Value,
 };
 use gc::{Finalize, Gc, GcCell, GcCellRef, GcCellRefMut, Trace};
 use serde_json::{map::Map, Value as JSONValue};
@@ -26,9 +17,25 @@ use std::{
     collections::HashMap,
     error::Error,
     fmt::{self, Debug, Display},
-    rc::Rc,
     result::Result as StdResult,
 };
+
+#[cfg(not(feature = "vm"))]
+use crate::{
+    builtins::function::{
+        create_unmapped_arguments_object, ClosureFunction, Function, NativeFunction,
+    },
+    environment::{
+        environment_record_trait::EnvironmentRecordTrait,
+        function_environment_record::{BindingStatus, FunctionEnvironmentRecord},
+        lexical_environment::Environment,
+    },
+    object::PROTOTYPE,
+    syntax::ast::node::RcStatementList,
+    Executable,
+};
+#[cfg(not(feature = "vm"))]
+use std::rc::Rc;
 
 /// A wrapper type for an immutably borrowed type T.
 pub type Ref<'a, T> = GcCellRef<'a, T>;
@@ -44,6 +51,7 @@ pub struct GcObject(Gc<GcCell<Object>>);
 ///
 /// This is needed for the call method since we cannot mutate the function itself since we
 /// already borrow it so we get the function body clone it then drop the borrow and run the body
+#[cfg(not(feature = "vm"))]
 enum FunctionBody {
     BuiltInFunction(NativeFunction),
     BuiltInConstructor(NativeFunction),
@@ -124,6 +132,7 @@ impl GcObject {
     /// <https://tc39.es/ecma262/#sec-runtime-semantics-evaluatebody>
     /// <https://tc39.es/ecma262/#sec-ordinarycallevaluatebody>
     #[track_caller]
+    #[cfg(not(feature = "vm"))]
     fn call_construct(
         &self,
         this_target: &Value,
@@ -136,10 +145,7 @@ impl GcObject {
 
         let body = if let Some(function) = self.borrow().as_function() {
             if construct && !function.is_constructable() {
-                let name = self
-                    .__get__(&"name".into(), self.clone().into(), context)?
-                    .display()
-                    .to_string();
+                let name = self.get("name", context)?.display().to_string();
                 return context.throw_type_error(format!("{} is not a constructor", name));
             } else {
                 match function {
@@ -155,10 +161,11 @@ impl GcObject {
                     }
                     Function::Closure { function, .. } => FunctionBody::Closure(function.clone()),
                     Function::Ordinary {
+                        constructable: _,
+                        lexical_this_mode,
                         body,
                         params,
                         environment,
-                        flags,
                     } => {
                         let this = if construct {
                             // If the prototype of the constructor is not an object, then use the default object
@@ -188,14 +195,14 @@ impl GcObject {
                         // <https://tc39.es/ecma262/#sec-prepareforordinarycall>
                         let local_env = FunctionEnvironmentRecord::new(
                             this_function_object.clone(),
-                            if construct || !flags.is_lexical_this_mode() {
+                            if construct || !lexical_this_mode {
                                 Some(this.clone())
                             } else {
                                 None
                             },
                             Some(environment.clone()),
                             // Arrow functions do not have a this binding https://tc39.es/ecma262/#sec-function-environment-records
-                            if flags.is_lexical_this_mode() {
+                            if *lexical_this_mode {
                                 BindingStatus::Lexical
                             } else {
                                 BindingStatus::Uninitialized
@@ -218,7 +225,7 @@ impl GcObject {
                         // - If there are default parameters or if lexical names and function names do not contain `arguments` (10.2.11.18)
                         //
                         // https://tc39.es/ecma262/#sec-functiondeclarationinstantiation
-                        if !flags.is_lexical_this_mode()
+                        if !lexical_this_mode
                             && !arguments_in_parameter_names
                             && (has_parameter_expressions
                                 || (!body.lexically_declared_names().contains("arguments")
@@ -245,7 +252,7 @@ impl GcObject {
                         for (i, param) in params.iter().enumerate() {
                             // Rest Parameters
                             if param.is_rest_param() {
-                                function.add_rest_param(param, i, args, context, &local_env);
+                                Function::add_rest_param(param, i, args, context, &local_env);
                                 break;
                             }
 
@@ -258,8 +265,9 @@ impl GcObject {
                                 Some(value) => value,
                             };
 
-                            function
-                                .add_arguments_to_environment(param, value, &local_env, context);
+                            Function::add_arguments_to_environment(
+                                param, value, &local_env, context,
+                            );
                         }
 
                         if has_parameter_expressions {
@@ -269,14 +277,14 @@ impl GcObject {
                             // https://tc39.es/ecma262/#sec-functiondeclarationinstantiation
                             let second_env = FunctionEnvironmentRecord::new(
                                 this_function_object,
-                                if construct || !flags.is_lexical_this_mode() {
+                                if construct || !lexical_this_mode {
                                     Some(this)
                                 } else {
                                     None
                                 },
                                 Some(local_env),
                                 // Arrow functions do not have a this binding https://tc39.es/ecma262/#sec-function-environment-records
-                                if flags.is_lexical_this_mode() {
+                                if *lexical_this_mode {
                                     BindingStatus::Lexical
                                 } else {
                                     BindingStatus::Uninitialized
@@ -287,6 +295,10 @@ impl GcObject {
                         }
 
                         FunctionBody::Ordinary(body.clone())
+                    }
+                    #[cfg(feature = "vm")]
+                    Function::VmOrdinary { .. } => {
+                        todo!("vm call")
                     }
                 }
             }
@@ -330,6 +342,7 @@ impl GcObject {
     // <https://tc39.es/ecma262/#sec-ecmascript-function-objects-call-thisargument-argumentslist>
     #[track_caller]
     #[inline]
+    #[cfg(not(feature = "vm"))]
     pub fn call(&self, this: &Value, args: &[Value], context: &mut Context) -> Result<Value> {
         self.call_construct(this, args, context, false)
     }
@@ -342,6 +355,7 @@ impl GcObject {
     // <https://tc39.es/ecma262/#sec-ecmascript-function-objects-construct-argumentslist-newtarget>
     #[track_caller]
     #[inline]
+    #[cfg(not(feature = "vm"))]
     pub fn construct(
         &self,
         args: &[Value],

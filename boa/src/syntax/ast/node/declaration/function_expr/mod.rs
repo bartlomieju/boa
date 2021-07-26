@@ -1,5 +1,4 @@
 use crate::{
-    builtins::function::FunctionFlags,
     exec::Executable,
     gc::{Finalize, Trace},
     syntax::ast::node::{join_nodes, FormalParameter, Node, StatementList},
@@ -103,7 +102,8 @@ impl Executable for FunctionExpr {
             self.name().unwrap_or(""),
             self.parameters().to_vec(),
             self.body().to_vec(),
-            FunctionFlags::CONSTRUCTABLE,
+            true,
+            false,
         )?;
 
         Ok(val)
