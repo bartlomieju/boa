@@ -58,16 +58,16 @@ impl Executable for Assign {
         let val = self.rhs().run(context)?;
         match self.lhs() {
             Node::Identifier(ref name) => {
-                if context.has_binding(name.as_ref()) {
+                if context.has_binding(name.as_string()) {
                     // Binding already exists
-                    context.set_mutable_binding(name.as_ref(), val.clone(), true)?;
+                    context.set_mutable_binding(name.as_string(), val.clone(), true)?;
                 } else {
                     context.create_mutable_binding(
-                        name.as_ref().to_owned(),
+                        name.as_string(),
                         true,
                         VariableScope::Function,
                     )?;
-                    context.initialize_binding(name.as_ref(), val.clone())?;
+                    context.initialize_binding(name.as_string(), val.clone())?;
                 }
             }
             Node::GetConstField(ref get_const_field) => {

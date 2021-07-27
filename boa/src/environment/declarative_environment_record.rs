@@ -12,7 +12,7 @@ use crate::{
     },
     gc::{Finalize, Trace},
     object::GcObject,
-    BoaProfiler, Context, Result, Value,
+    BoaProfiler, Context, JsString, Result, Value,
 };
 use gc::{Gc, GcCell};
 use rustc_hash::FxHashMap;
@@ -34,7 +34,7 @@ pub struct DeclarativeEnvironmentRecordBinding {
 /// declarations contained within its scope.
 #[derive(Debug, Trace, Finalize, Clone)]
 pub struct DeclarativeEnvironmentRecord {
-    pub env_rec: GcCell<FxHashMap<Box<str>, DeclarativeEnvironmentRecordBinding>>,
+    pub env_rec: GcCell<FxHashMap<JsString, DeclarativeEnvironmentRecordBinding>>,
     pub outer_env: Option<Environment>,
 }
 
@@ -49,13 +49,13 @@ impl DeclarativeEnvironmentRecord {
 }
 
 impl EnvironmentRecordTrait for DeclarativeEnvironmentRecord {
-    fn has_binding(&self, name: &str) -> bool {
-        self.env_rec.borrow().contains_key(name)
+    fn has_binding(&self, name: JsString) -> bool {
+        self.env_rec.borrow().contains_key(&name)
     }
 
     fn create_mutable_binding(
         &self,
-        name: String,
+        name: JsString,
         deletion: bool,
         allow_name_reuse: bool,
         _context: &mut Context,
@@ -69,7 +69,7 @@ impl EnvironmentRecordTrait for DeclarativeEnvironmentRecord {
         }
 
         self.env_rec.borrow_mut().insert(
-            name.into_boxed_str(),
+            name,
             DeclarativeEnvironmentRecordBinding {
                 value: None,
                 can_delete: deletion,
@@ -82,7 +82,7 @@ impl EnvironmentRecordTrait for DeclarativeEnvironmentRecord {
 
     fn create_immutable_binding(
         &self,
-        name: String,
+        name: JsString,
         strict: bool,
         _context: &mut Context,
     ) -> Result<()> {
@@ -93,7 +93,7 @@ impl EnvironmentRecordTrait for DeclarativeEnvironmentRecord {
         );
 
         self.env_rec.borrow_mut().insert(
-            name.into_boxed_str(),
+            name,
             DeclarativeEnvironmentRecordBinding {
                 value: None,
                 can_delete: true,
@@ -104,8 +104,13 @@ impl EnvironmentRecordTrait for DeclarativeEnvironmentRecord {
         Ok(())
     }
 
-    fn initialize_binding(&self, name: &str, value: Value, _context: &mut Context) -> Result<()> {
-        if let Some(ref mut record) = self.env_rec.borrow_mut().get_mut(name) {
+    fn initialize_binding(
+        &self,
+        name: JsString,
+        value: Value,
+        _context: &mut Context,
+    ) -> Result<()> {
+        if let Some(ref mut record) = self.env_rec.borrow_mut().get_mut(&name) {
             if record.value.is_none() {
                 record.value = Some(value);
                 return Ok(());
@@ -117,12 +122,12 @@ impl EnvironmentRecordTrait for DeclarativeEnvironmentRecord {
     #[allow(clippy::else_if_without_else)]
     fn set_mutable_binding(
         &self,
-        name: &str,
+        name: JsString,
         value: Value,
         mut strict: bool,
         context: &mut Context,
     ) -> Result<()> {
-        if self.env_rec.borrow().get(name).is_none() {
+        if self.env_rec.borrow().get(&name).is_none() {
             if strict {
                 return Err(context.construct_reference_error(format!("{} not found", name)));
             }
@@ -134,7 +139,7 @@ impl EnvironmentRecordTrait for DeclarativeEnvironmentRecord {
 
         let (record_strict, record_has_no_value, record_mutable) = {
             let env_rec = self.env_rec.borrow();
-            let record = env_rec.get(name).unwrap();
+            let record = env_rec.get(&name).unwrap();
             (record.strict, record.value.is_none(), record.mutable)
         };
         if record_strict {
@@ -147,7 +152,7 @@ impl EnvironmentRecordTrait for DeclarativeEnvironmentRecord {
         }
         if record_mutable {
             let mut env_rec = self.env_rec.borrow_mut();
-            let record = env_rec.get_mut(name).unwrap();
+            let record = env_rec.get_mut(&name).unwrap();
             record.value = Some(value);
         } else if strict {
             return Err(context.construct_reference_error(format!(
@@ -159,8 +164,13 @@ impl EnvironmentRecordTrait for DeclarativeEnvironmentRecord {
         Ok(())
     }
 
-    fn get_binding_value(&self, name: &str, _strict: bool, context: &mut Context) -> Result<Value> {
-        if let Some(binding) = self.env_rec.borrow().get(name) {
+    fn get_binding_value(
+        &self,
+        name: JsString,
+        _strict: bool,
+        context: &mut Context,
+    ) -> Result<Value> {
+        if let Some(binding) = self.env_rec.borrow().get(&name) {
             if let Some(ref val) = binding.value {
                 Ok(val.clone())
             } else {
@@ -171,11 +181,11 @@ impl EnvironmentRecordTrait for DeclarativeEnvironmentRecord {
         }
     }
 
-    fn delete_binding(&self, name: &str) -> bool {
-        match self.env_rec.borrow().get(name) {
+    fn delete_binding(&self, name: JsString) -> bool {
+        match self.env_rec.borrow().get(&name) {
             Some(binding) => {
                 if binding.can_delete {
-                    self.env_rec.borrow_mut().remove(name);
+                    self.env_rec.borrow_mut().remove(&name);
                     true
                 } else {
                     false

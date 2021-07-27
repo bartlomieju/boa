@@ -75,7 +75,7 @@ where
         {
             let lexically_declared_names = body.lexically_declared_names();
             for param in params.as_ref() {
-                if lexically_declared_names.contains(param.name()) {
+                if lexically_declared_names.contains(&param.name()) {
                     return Err(ParseError::lex(LexError::Syntax(
                         format!("Redeclaration of formal parameter `{}`", param.name()).into(),
                         match cursor.peek(0)? {

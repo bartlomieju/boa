@@ -256,63 +256,54 @@ impl<'a> Vm<'a> {
             }
             Opcode::DefVar => {
                 let index = self.read::<u32>();
-                let name = &self.code.names[index as usize];
+                let name = self.code.names[index as usize].clone();
 
-                self.context.create_mutable_binding(
-                    name.to_string(),
-                    false,
-                    VariableScope::Function,
-                )?;
+                self.context
+                    .create_mutable_binding(name, false, VariableScope::Function)?;
             }
             Opcode::DefLet => {
                 let index = self.read::<u32>();
-                let name = &self.code.names[index as usize];
+                let name = self.code.names[index as usize].clone();
 
-                self.context.create_mutable_binding(
-                    name.to_string(),
-                    false,
-                    VariableScope::Block,
-                )?;
+                self.context
+                    .create_mutable_binding(name, false, VariableScope::Block)?;
             }
             Opcode::DefConst => {
                 let index = self.read::<u32>();
-                let name = &self.code.names[index as usize];
+                let name = self.code.names[index as usize].clone();
 
-                self.context.create_immutable_binding(
-                    name.to_string(),
-                    false,
-                    VariableScope::Block,
-                )?;
+                self.context
+                    .create_immutable_binding(name, false, VariableScope::Block)?;
             }
             Opcode::InitLexical => {
                 let index = self.read::<u32>();
                 let value = self.pop();
-                let name = &self.code.names[index as usize];
+                let name = self.code.names[index as usize].clone();
 
-                self.context.initialize_binding(&name, value)?;
+                self.context.initialize_binding(name, value)?;
             }
             Opcode::GetName => {
                 let index = self.read::<u32>();
-                let name = &self.code.names[index as usize];
+                let name = self.code.names[index as usize].clone();
 
-                let value = self.context.get_binding_value(&name)?;
+                let value = self.context.get_binding_value(name)?;
                 self.push(value);
             }
             Opcode::SetName => {
                 let index = self.read::<u32>();
                 let value = self.pop();
-                let name = &self.code.names[index as usize];
+                let name = self.code.names[index as usize].clone();
 
-                if self.context.has_binding(&name) {
+                if self.context.has_binding(name.clone()) {
                     // Binding already exists
-                    self.context.set_mutable_binding(&name, value, true)?;
+                    self.context.set_mutable_binding(name, value, true)?;
                 } else {
                     self.context.create_mutable_binding(
-                        name.to_string(),
+                        name.clone(),
                         true,
                         VariableScope::Function,
                     )?;
-                    self.context.initialize_binding(&name, value)?;
+                    self.context.initialize_binding(name, value)?;
                 }
             }
             Opcode::Jump => {

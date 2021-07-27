@@ -9,6 +9,9 @@ use std::{
     ptr::{copy_nonoverlapping, NonNull},
 };
 
+#[cfg(feature = "deser")]
+use serde::{Deserialize, Serialize};
+
 thread_local! {
     static CONSTANTS: Constants = Constants {
         length: JsString::new("length"),
@@ -17,6 +20,7 @@ thread_local! {
         to_string: JsString::new("toString"),
         value_of: JsString::new("valueOf"),
         join: JsString::new("join"),
+        arguments: JsString::new("arguments"),
         prototype: JsString::new("prototype"),
         constructor: JsString::new("constructor"),
         // We have to construct our selfs or it will cause a recursion.
@@ -36,6 +40,7 @@ pub struct Constants {
     to_string: JsString,
     join: JsString,
     value_of: JsString,
+    arguments: JsString,
     constructor: JsString,
     empty_string: JsString,
 }
@@ -69,6 +74,11 @@ impl Constants {
     #[inline]
     pub fn join() -> JsString {
         CONSTANTS.with(|constants| constants.join.clone())
+    }
+
+    #[inline]
+    pub fn arguments() -> JsString {
+        CONSTANTS.with(|constants| constants.arguments.clone())
     }
 
     #[inline]
@@ -426,6 +436,26 @@ impl PartialEq<JsString> for &str {
     #[inline]
     fn eq(&self, other: &JsString) -> bool {
         *self == other.as_str()
+    }
+}
+
+#[cfg(feature = "deser")]
+impl Serialize for JsString {
+    fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        todo!()
+    }
+}
+
+#[cfg(feature = "deser")]
+impl<'de> Deserialize<'de> for JsString {
+    fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        todo!()
     }
 }
 

@@ -82,7 +82,7 @@ where
                 }
                 _ => FormalParameter::new(self.allow_yield, self.allow_await).parse(cursor)?,
             };
-            if param_names.contains(next_param.name()) {
+            if param_names.contains(&next_param.name()) {
                 return Err(ParseError::general("duplicate parameter name", position));
             }
 

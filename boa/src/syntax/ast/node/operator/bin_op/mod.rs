@@ -200,10 +200,10 @@ impl Executable for BinOp {
             }),
             op::BinOp::Assign(op) => match self.lhs() {
                 Node::Identifier(ref name) => {
-                    let v_a = context.get_binding_value(name.as_ref())?;
+                    let v_a = context.get_binding_value(name.as_string())?;
 
                     let value = Self::run_assign(op, v_a, self.rhs(), context)?;
-                    context.set_mutable_binding(name.as_ref(), value.clone(), true)?;
+                    context.set_mutable_binding(name.as_string(), value.clone(), true)?;
                     Ok(value)
                 }
                 Node::GetConstField(ref get_const_field) => {

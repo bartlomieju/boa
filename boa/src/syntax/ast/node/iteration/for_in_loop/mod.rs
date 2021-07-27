@@ -110,16 +110,19 @@ impl Executable for ForInLoop {
 
             match self.variable() {
                 Node::Identifier(ref name) => {
-                    if context.has_binding(name.as_ref()) {
+                    if context.has_binding(name.as_string()) {
                         // Binding already exists
-                        context.set_mutable_binding(name.as_ref(), next_result.clone(), true)?;
+                        context.set_mutable_binding(name.as_string(), next_result.clone(), true)?;
                     } else {
                         context.create_mutable_binding(
-                            name.as_ref().to_owned(),
+                            name.as_string(),
                             true,
                             VariableScope::Function,
                         )?;
-                        context.initialize_binding(name.as_ref(), next_result.clone())?;
+                        context.initialize_binding(
+                            name.as_string(),
+                            next_result.clone(),
+                        )?;
                     }
                 }
                 Node::VarDeclList(ref list) => match list.as_ref() {

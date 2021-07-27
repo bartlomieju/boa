@@ -224,12 +224,16 @@ impl GcObject {
                             // Add arguments object
                             let arguments_obj = create_unmapped_arguments_object(args);
                             local_env.create_mutable_binding(
-                                "arguments".to_string(),
+                                Constants::arguments(),
                                 false,
                                 true,
                                 context,
                             )?;
-                            local_env.initialize_binding("arguments", arguments_obj, context)?;
+                            local_env.initialize_binding(
+                                Constants::arguments(),
+                                arguments_obj,
+                                context,
+                            )?;
                         }
 
                         // Turn local_env into Environment so it can be cloned

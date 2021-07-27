@@ -4,7 +4,7 @@ use crate::{
     exec::Executable,
     gc::{Finalize, Trace},
     syntax::ast::node::Node,
-    BoaProfiler, Context, Result, Value,
+    BoaProfiler, Context, JsString, Result, Value,
 };
 use std::fmt;
 
@@ -30,13 +30,19 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "deser", serde(transparent))]
 #[derive(Clone, Debug, Trace, Finalize, PartialEq)]
 pub struct Identifier {
-    ident: Box<str>,
+    ident: JsString,
+}
+
+impl Identifier {
+    pub fn as_string(&self) -> JsString {
+        self.ident.clone()
+    }
 }
 
 impl Executable for Identifier {
     fn run(&self, context: &mut Context) -> Result<Value> {
         let _timer = BoaProfiler::global().start_event("Identifier", "exec");
-        context.get_binding_value(self.as_ref())
+        context.get_binding_value(self.ident.clone())
     }
 }
 
@@ -46,15 +52,9 @@ impl fmt::Display for Identifier {
     }
 }
 
-impl AsRef<str> for Identifier {
-    fn as_ref(&self) -> &str {
-        &self.ident
-    }
-}
-
 impl<T> From<T> for Identifier
 where
-    T: Into<Box<str>>,
+    T: Into<JsString>,
 {
     fn from(stm: T) -> Self {
         Self { ident: stm.into() }

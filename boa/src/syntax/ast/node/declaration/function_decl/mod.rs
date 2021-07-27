@@ -5,7 +5,7 @@ use crate::{
     gc::{Finalize, Trace},
     string::Constants,
     syntax::ast::node::{join_nodes, FormalParameter, Node, StatementList},
-    BoaProfiler, Context, Result, Value,
+    BoaProfiler, Context, JsString, Result, Value,
 };
 use std::fmt;
 
@@ -33,7 +33,7 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "deser", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Trace, Finalize, PartialEq)]
 pub struct FunctionDecl {
-    name: Box<str>,
+    name: JsString,
     parameters: Box<[FormalParameter]>,
     body: StatementList,
 }
@@ -42,7 +42,7 @@ impl FunctionDecl {
     /// Creates a new function declaration.
     pub(in crate::syntax) fn new<N, P, B>(name: N, parameters: P, body: B) -> Self
     where
-        N: Into<Box<str>>,
+        N: Into<JsString>,
         P: Into<Box<[FormalParameter]>>,
         B: Into<StatementList>,
     {
@@ -54,8 +54,8 @@ impl FunctionDecl {
     }
 
     /// Gets the name of the function declaration.
-    pub fn name(&self) -> &str {
-        &self.name
+    pub fn name(&self) -> JsString {
+        self.name.clone()
     }
 
     /// Gets the list of parameters of the function declaration.
@@ -101,11 +101,7 @@ impl Executable for FunctionDecl {
         if context.has_binding(self.name()) {
             context.set_mutable_binding(self.name(), val, true)?;
         } else {
-            context.create_mutable_binding(
-                self.name().to_owned(),
-                false,
-                VariableScope::Function,
-            )?;
+            context.create_mutable_binding(self.name(), false, VariableScope::Function)?;
 
             context.initialize_binding(self.name(), val)?;
         }

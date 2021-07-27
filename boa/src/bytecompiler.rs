@@ -83,12 +83,11 @@ impl ByteCompiler {
     }
 
     #[inline]
-    fn get_or_insert_name(&mut self, name: &str) -> u32 {
-        if let Some(index) = self.names_map.get(name) {
+    fn get_or_insert_name(&mut self, name: JsString) -> u32 {
+        if let Some(index) = self.names_map.get(&name) {
             return *index;
         }
 
-        let name = JsString::new(name);
         let index = self.code_block.names.len() as u32;
         self.code_block.names.push(name.clone());
         self.names_map.insert(name, index);
@@ -279,7 +278,7 @@ impl ByteCompiler {
     fn access_get(&mut self, access: Access<'_>, use_expr: bool) {
         match access {
             Access::Variable { name } => {
-                let index = self.get_or_insert_name(name.as_ref());
+                let index = self.get_or_insert_name(name.as_string());
                 self.emit(Opcode::GetName, &[index]);
             }
             Access::ByName { node } => {
@@ -314,7 +313,7 @@ impl ByteCompiler {
 
         match access {
             Access::Variable { name } => {
-                let index = self.get_or_insert_name(name.as_ref());
+                let index = self.get_or_insert_name(name.as_string());
                 self.emit(Opcode::SetName, &[index]);
             }
             Access::ByName { node } => {

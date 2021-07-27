@@ -4,7 +4,7 @@ use crate::{
     exec::Executable,
     gc::{Finalize, Trace},
     syntax::ast::node::{join_nodes, Identifier, Node},
-    Context, Result, Value,
+    Context, JsString, Result, Value,
 };
 use std::fmt;
 
@@ -109,21 +109,15 @@ impl Executable for DeclarationList {
             }
 
             match &self {
-                Const(_) => context.create_immutable_binding(
-                    decl.name().to_owned(),
-                    false,
-                    VariableScope::Block,
-                )?,
-                Let(_) => context.create_mutable_binding(
-                    decl.name().to_owned(),
-                    false,
-                    VariableScope::Block,
-                )?,
-                Var(_) => context.create_mutable_binding(
-                    decl.name().to_owned(),
-                    false,
-                    VariableScope::Function,
-                )?,
+                Const(_) => {
+                    context.create_immutable_binding(decl.name(), false, VariableScope::Block)?
+                }
+                Let(_) => {
+                    context.create_mutable_binding(decl.name(), false, VariableScope::Block)?
+                }
+                Var(_) => {
+                    context.create_mutable_binding(decl.name(), false, VariableScope::Function)?
+                }
             }
 
             context.initialize_binding(decl.name(), val)?;
@@ -220,8 +214,8 @@ impl Declaration {
     }
 
     /// Gets the name of the variable.
-    pub fn name(&self) -> &str {
-        self.name.as_ref()
+    pub fn name(&self) -> JsString {
+        self.name.as_string()
     }
 
     /// Gets the initialization node for the variable, if any.
