@@ -1,5 +1,6 @@
 use super::Array;
 use crate::builtins::Number;
+use crate::string::Constants;
 use crate::{forward, Context, Value};
 
 #[test]
@@ -1539,6 +1540,6 @@ fn array_length_is_not_enumerable() {
     let context = Context::new();
 
     let array = Array::new_array(&context);
-    let desc = array.get_property("length").unwrap();
+    let desc = array.get_property(Constants::length()).unwrap();
     assert!(!desc.enumerable());
 }

@@ -15,6 +15,7 @@ use crate::{
     context::StandardConstructor,
     gc::{Finalize, Trace},
     property::{AccessorDescriptor, Attribute, DataDescriptor, PropertyDescriptor, PropertyKey},
+    string::Constants,
     BoaProfiler, Context, JsBigInt, JsString, JsSymbol, Value,
 };
 use rustc_hash::FxHashMap;
@@ -34,9 +35,6 @@ mod iter;
 use crate::builtins::object::for_in_iterator::ForInIterator;
 pub use gcobject::{GcObject, RecursionLimiter, Ref, RefMut};
 pub use iter::*;
-
-/// Static `prototype`, usually set on constructors as a key to point to their respective prototype object.
-pub static PROTOTYPE: &str = "prototype";
 
 /// This trait allows Rust types to be passed around as objects.
 ///
@@ -760,11 +758,11 @@ impl<'context> FunctionBuilder<'context> {
         );
         let attribute = Attribute::READONLY | Attribute::NON_ENUMERABLE | Attribute::CONFIGURABLE;
         if let Some(name) = self.name.take() {
-            function.insert_property("name", name, attribute);
+            function.insert_property(Constants::name(), name, attribute);
         } else {
-            function.insert_property("name", "", attribute);
+            function.insert_property(Constants::name(), "", attribute);
         }
-        function.insert_property("length", self.length, attribute);
+        function.insert_property(Constants::length(), self.length, attribute);
 
         GcObject::new(function)
     }
@@ -785,11 +783,11 @@ impl<'context> FunctionBuilder<'context> {
         );
         let attribute = Attribute::WRITABLE | Attribute::NON_ENUMERABLE | Attribute::PERMANENT;
         if let Some(name) = self.name.take() {
-            object.insert_property("name", name, attribute);
+            object.insert_property(Constants::name(), name, attribute);
         } else {
-            object.insert_property("name", "", attribute);
+            object.insert_property(Constants::name(), "", attribute);
         }
-        object.insert_property("length", self.length, attribute);
+        object.insert_property(Constants::length(), self.length, attribute);
     }
 }
 
@@ -1139,8 +1137,8 @@ impl<'context> ConstructorBuilder<'context> {
         {
             let mut constructor = self.constructor_object.borrow_mut();
             constructor.data = ObjectData::Function(function);
-            constructor.insert("length", length);
-            constructor.insert("name", name);
+            constructor.insert(Constants::length(), length);
+            constructor.insert(Constants::name(), name);
 
             constructor.set_prototype_instance(
                 self.context
@@ -1151,7 +1149,7 @@ impl<'context> ConstructorBuilder<'context> {
             );
 
             constructor.insert_property(
-                PROTOTYPE,
+                Constants::prototype(),
                 self.prototype.clone(),
                 Attribute::READONLY | Attribute::NON_ENUMERABLE | Attribute::PERMANENT,
             );
@@ -1160,7 +1158,7 @@ impl<'context> ConstructorBuilder<'context> {
         {
             let mut prototype = self.prototype.borrow_mut();
             prototype.insert_property(
-                "constructor",
+                Constants::constructor(),
                 self.constructor_object.clone(),
                 Attribute::WRITABLE | Attribute::NON_ENUMERABLE | Attribute::CONFIGURABLE,
             );

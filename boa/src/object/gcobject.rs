@@ -2,7 +2,7 @@
 //!
 //! The `GcObject` is a garbage collected Object.
 
-use super::{NativeObject, Object, PROTOTYPE};
+use super::{NativeObject, Object};
 use crate::{
     builtins::function::{
         create_unmapped_arguments_object, BuiltInFunction, Function, NativeFunction,
@@ -14,6 +14,7 @@ use crate::{
         lexical_environment::Environment,
     },
     property::{AccessorDescriptor, Attribute, DataDescriptor, PropertyDescriptor, PropertyKey},
+    string::Constants,
     symbol::WellKnownSymbols,
     syntax::ast::node::RcStatementList,
     value::PreferredType,
@@ -135,7 +136,7 @@ impl GcObject {
         let body = if let Some(function) = self.borrow().as_function() {
             if construct && !function.is_constructable() {
                 let name = self
-                    .__get__(&"name".into(), self.clone().into(), context)?
+                    .__get__(&Constants::name().into(), self.clone().into(), context)?
                     .display()
                     .to_string();
                 return context.throw_type_error(format!("{} is not a constructor", name));
@@ -162,7 +163,7 @@ impl GcObject {
                             // see <https://tc39.es/ecma262/#sec-ordinarycreatefromconstructor>
                             // see <https://tc39.es/ecma262/#sec-getprototypefromconstructor>
                             let proto = this_target.as_object().unwrap().__get__(
-                                &PROTOTYPE.into(),
+                                &Constants::prototype().into(),
                                 this_target.clone(),
                                 context,
                             )?;
@@ -393,16 +394,16 @@ impl GcObject {
         // 4. Else,
         //    a. Let methodNames be « "valueOf", "toString" ».
         let method_names = if hint == PreferredType::String {
-            ["toString", "valueOf"]
+            [Constants::to_string(), Constants::value_of()]
         } else {
-            ["valueOf", "toString"]
+            [Constants::value_of(), Constants::to_string()]
         };
 
         // 5. For each name in methodNames in List order, do
         let this = Value::from(self.clone());
         for name in &method_names {
             // a. Let method be ? Get(O, name).
-            let method: Value = this.get_field(*name, context)?;
+            let method: Value = this.get_field(name.clone(), context)?;
             // b. If IsCallable(method) is true, then
             if method.is_function() {
                 // i. Let result be ? Call(method, O).
@@ -834,7 +835,7 @@ impl GcObject {
         if let Some(object) = value.as_object() {
             // 4. Let P be ? Get(C, "prototype").
             // 5. If Type(P) is not Object, throw a TypeError exception.
-            if let Some(prototype) = self.get("prototype", context)?.as_object() {
+            if let Some(prototype) = self.get(Constants::prototype(), context)?.as_object() {
                 // 6. Repeat,
                 //      a. Set O to ? O.[[GetPrototypeOf]]().
                 //      b. If O is null, return false.
@@ -876,7 +877,7 @@ impl GcObject {
         // 1. Assert: Type(O) is Object.
 
         // 2. Let C be ? Get(O, "constructor").
-        let c = self.clone().get("constructor", context)?;
+        let c = self.clone().get(Constants::constructor(), context)?;
 
         // 3. If C is undefined, return defaultConstructor.
         if c.is_undefined() {

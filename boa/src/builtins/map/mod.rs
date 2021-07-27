@@ -12,13 +12,7 @@
 
 #![allow(clippy::mutable_key_type)]
 
-use crate::{
-    builtins::BuiltIn,
-    object::{ConstructorBuilder, FunctionBuilder, ObjectData, PROTOTYPE},
-    property::{Attribute, DataDescriptor},
-    symbol::WellKnownSymbols,
-    BoaProfiler, Context, Result, Value,
-};
+use crate::{BoaProfiler, Context, Result, Value, builtins::BuiltIn, object::{ConstructorBuilder, FunctionBuilder, ObjectData}, property::{Attribute, DataDescriptor}, string::Constants, symbol::WellKnownSymbols};
 use ordered_map::OrderedMap;
 
 pub mod map_iterator;
@@ -118,7 +112,7 @@ impl Map {
         let prototype = new_target
             .as_object()
             .and_then(|obj| {
-                obj.__get__(&PROTOTYPE.into(), obj.clone().into(), context)
+                obj.__get__(&Constants::prototype().into(), obj.clone().into(), context)
                     .map(|o| o.as_object())
                     .transpose()
             })
@@ -139,7 +133,7 @@ impl Map {
                         map
                     } else if object.is_array() {
                         let mut map = OrderedMap::new();
-                        let len = args[0].get_field("length", context)?.to_integer(context)? as i32;
+                        let len = args[0].get_field(Constants::length(), context)?.to_integer(context)? as i32;
                         for i in 0..len {
                             let val = &args[0].get_field(i, context)?;
                             let (key, value) =
@@ -463,7 +457,7 @@ impl Map {
         if let Value::Object(object) = value {
             if object.is_array() {
                 let (key, value) =
-                    match value.get_field("length", context)?.as_number().unwrap() as i32 {
+                    match value.get_field(Constants::length(), context)?.as_number().unwrap() as i32 {
                         0 => (Value::Undefined, Value::Undefined),
                         1 => (value.get_field("0", context)?, Value::Undefined),
                         _ => (

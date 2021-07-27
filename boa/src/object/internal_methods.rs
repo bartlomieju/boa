@@ -5,12 +5,7 @@
 //!
 //! [spec]: https://tc39.es/ecma262/#sec-ordinary-object-internal-methods-and-internal-slots
 
-use crate::{
-    object::{GcObject, Object, ObjectData},
-    property::{AccessorDescriptor, Attribute, DataDescriptor, PropertyDescriptor, PropertyKey},
-    value::{Type, Value},
-    BoaProfiler, Context, Result,
-};
+use crate::{BoaProfiler, Context, Result, object::{GcObject, Object, ObjectData}, property::{AccessorDescriptor, Attribute, DataDescriptor, PropertyDescriptor, PropertyKey}, string::Constants, value::{Type, Value}};
 
 impl GcObject {
     /// Check if object has property.
@@ -507,11 +502,15 @@ impl GcObject {
             PropertyKey::String(ref s) if s == "length" => {
                 match desc {
                     PropertyDescriptor::Accessor(_) => {
-                        return Ok(self.ordinary_define_own_property("length".into(), desc))
+                        return Ok(
+                            self.ordinary_define_own_property(Constants::length().into(), desc)
+                        )
                     }
                     PropertyDescriptor::Data(ref d) => {
                         if d.value().is_undefined() {
-                            return Ok(self.ordinary_define_own_property("length".into(), desc));
+                            return Ok(
+                                self.ordinary_define_own_property(Constants::length().into(), desc)
+                            );
                         }
                         let new_len = d.value().to_u32(context)?;
                         let number_len = d.value().to_number(context)?;
@@ -521,13 +520,16 @@ impl GcObject {
                         }
                         let mut new_len_desc =
                             PropertyDescriptor::Data(DataDescriptor::new(new_len, d.attributes()));
-                        let old_len_desc = self.__get_own_property__(&"length".into()).unwrap();
+                        let old_len_desc = self
+                            .__get_own_property__(&Constants::length().into())
+                            .unwrap();
                         let old_len_desc = old_len_desc.as_data_descriptor().unwrap();
                         let old_len = old_len_desc.value();
                         if new_len >= old_len.to_u32(context)? {
-                            return Ok(
-                                self.ordinary_define_own_property("length".into(), new_len_desc)
-                            );
+                            return Ok(self.ordinary_define_own_property(
+                                Constants::length().into(),
+                                new_len_desc,
+                            ));
                         }
                         if !old_len_desc.writable() {
                             return Ok(false);
@@ -543,8 +545,10 @@ impl GcObject {
                             ));
                             false
                         };
-                        if !self.ordinary_define_own_property("length".into(), new_len_desc.clone())
-                        {
+                        if !self.ordinary_define_own_property(
+                            Constants::length().into(),
+                            new_len_desc.clone(),
+                        ) {
                             return Ok(false);
                         }
                         let keys_to_delete = {
@@ -567,7 +571,10 @@ impl GcObject {
                                     key + 1,
                                     new_len_desc_attribute,
                                 ));
-                                self.ordinary_define_own_property("length".into(), new_len_desc);
+                                self.ordinary_define_own_property(
+                                    Constants::length().into(),
+                                    new_len_desc,
+                                );
                                 return Ok(false);
                             }
                         }
@@ -578,14 +585,16 @@ impl GcObject {
                                 new_len,
                                 new_desc_attr,
                             ));
-                            self.ordinary_define_own_property("length".into(), new_desc);
+                            self.ordinary_define_own_property(Constants::length().into(), new_desc);
                         }
                     }
                 }
                 Ok(true)
             }
             PropertyKey::Index(index) => {
-                let old_len_desc = self.__get_own_property__(&"length".into()).unwrap();
+                let old_len_desc = self
+                    .__get_own_property__(&Constants::length().into())
+                    .unwrap();
                 let old_len_data_desc = old_len_desc.as_data_descriptor().unwrap();
                 let old_len = old_len_data_desc.value().to_u32(context)?;
                 if index >= old_len && !old_len_data_desc.writable() {
@@ -597,7 +606,7 @@ impl GcObject {
                             index + 1,
                             old_len_data_desc.attributes(),
                         ));
-                        self.ordinary_define_own_property("length".into(), desc);
+                        self.ordinary_define_own_property(Constants::length().into(), desc);
                     }
                     Ok(true)
                 } else {
@@ -911,7 +920,7 @@ impl GcObject {
     pub(crate) fn length_of_array_like(&self, context: &mut Context) -> Result<usize> {
         // 1. Assert: Type(obj) is Object.
         // 2. Return ℝ(? ToLength(? Get(obj, "length"))).
-        self.get("length", context)?.to_length(context)
+        self.get(Constants::length(), context)?.to_length(context)
     }
 }
 

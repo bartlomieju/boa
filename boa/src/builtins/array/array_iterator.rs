@@ -3,6 +3,7 @@ use crate::{
     gc::{Finalize, Trace},
     object::{GcObject, ObjectData},
     property::{Attribute, DataDescriptor},
+    string::Constants,
     symbol::WellKnownSymbols,
     BoaProfiler, Context, Result,
 };
@@ -78,7 +79,7 @@ impl ArrayIterator {
                 }
                 let len = array_iterator
                     .array
-                    .get_field("length", context)?
+                    .get_field(Constants::length(), context)?
                     .as_number()
                     .ok_or_else(|| context.construct_type_error("Not an array"))?
                     as u32;

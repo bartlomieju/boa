@@ -1,3 +1,5 @@
+use crate::string::Constants;
+
 use super::*;
 
 /// This object is used for displaying a `Value`.
@@ -102,7 +104,7 @@ pub(crate) fn log_string_from(x: &Value, print_internals: bool, print_children: 
                 }
                 ObjectData::Array => {
                     let len = v
-                        .__get_own_property__(&PropertyKey::from("length"))
+                        .__get_own_property__(&PropertyKey::from(Constants::length()))
                         // TODO: do this in a better way `unwrap`
                         .unwrap()
                         // FIXME: handle accessor descriptors
@@ -202,13 +204,13 @@ pub(crate) fn display_obj(v: &Value, print_internals: bool) -> String {
     if let Value::Object(object) = v {
         if object.borrow().is_error() {
             let name = v
-                .get_property("name")
+                .get_property(Constants::name())
                 .as_ref()
                 .and_then(|p| p.as_data_descriptor())
                 .map(|d| d.value())
                 .unwrap_or_else(Value::undefined);
             let message = v
-                .get_property("message")
+                .get_property(Constants::message())
                 .as_ref()
                 .and_then(|p| p.as_data_descriptor())
                 .map(|d| d.value())

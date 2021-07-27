@@ -14,8 +14,8 @@ pub mod string_iterator;
 mod tests;
 
 use crate::builtins::Symbol;
-use crate::object::PROTOTYPE;
 use crate::property::DataDescriptor;
+use crate::string::Constants;
 use crate::{
     builtins::{string::string_iterator::StringIterator, Array, BuiltIn, RegExp},
     object::{ConstructorBuilder, Object, ObjectData},
@@ -104,11 +104,11 @@ impl BuiltIn for String {
         )
         .name(Self::NAME)
         .length(Self::LENGTH)
-        .property("length", 0, attribute)
+        .property(Constants::length(), 0, attribute)
         .method(Self::char_at, "charAt", 1)
         .method(Self::char_code_at, "charCodeAt", 1)
         .method(Self::code_point_at, "codePointAt", 1)
-        .method(Self::to_string, "toString", 0)
+        .method(Self::to_string, Constants::to_string(), 0)
         .method(Self::concat, "concat", 1)
         .method(Self::repeat, "repeat", 1)
         .method(Self::slice, "slice", 2)
@@ -129,7 +129,7 @@ impl BuiltIn for String {
         .method(Self::substring, "substring", 2)
         .method(Self::substr, "substr", 2)
         .method(Self::split, "split", 2)
-        .method(Self::value_of, "valueOf", 0)
+        .method(Self::value_of, Constants::value_of(), 0)
         .method(Self::match_all, "matchAll", 1)
         .method(Self::replace, "replace", 2)
         .method(Self::iterator, (symbol_iterator, "[Symbol.iterator]"), 0)
@@ -179,7 +179,7 @@ impl String {
         let prototype = new_target
             .as_object()
             .and_then(|obj| {
-                obj.__get__(&PROTOTYPE.into(), obj.clone().into(), context)
+                obj.__get__(&Constants::prototype().into(), obj.clone().into(), context)
                     .map(|o| o.as_object())
                     .transpose()
             })
@@ -195,7 +195,7 @@ impl String {
             Value::from(string.encode_utf16().count()),
             Attribute::NON_ENUMERABLE,
         );
-        this.set_property("length", length);
+        this.set_property(Constants::length(), length);
 
         this.set_data(ObjectData::String(string));
 

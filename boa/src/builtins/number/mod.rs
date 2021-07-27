@@ -15,13 +15,7 @@
 
 use super::function::make_builtin_fn;
 use super::string::is_trimmable_whitespace;
-use crate::{
-    builtins::BuiltIn,
-    object::{ConstructorBuilder, ObjectData, PROTOTYPE},
-    property::Attribute,
-    value::{AbstractRelation, IntegerOrInfinity, Value},
-    BoaProfiler, Context, Result,
-};
+use crate::{BoaProfiler, Context, Result, builtins::BuiltIn, object::{ConstructorBuilder, ObjectData}, property::Attribute, string::Constants, value::{AbstractRelation, IntegerOrInfinity, Value}};
 use num_traits::{float::FloatCore, Num};
 
 mod conversions;
@@ -73,8 +67,8 @@ impl BuiltIn for Number {
         .method(Self::to_fixed, "toFixed", 1)
         .method(Self::to_locale_string, "toLocaleString", 0)
         .method(Self::to_precision, "toPrecision", 1)
-        .method(Self::to_string, "toString", 1)
-        .method(Self::value_of, "valueOf", 0)
+        .method(Self::to_string, Constants::to_string(), 1)
+        .method(Self::value_of, Constants::value_of(), 0)
         .static_method(Self::number_is_finite, "isFinite", 1)
         .static_method(Self::number_is_nan, "isNaN", 1)
         .static_method(Self::is_safe_integer, "isSafeInteger", 1)
@@ -169,7 +163,7 @@ impl Number {
         let prototype = new_target
             .as_object()
             .and_then(|obj| {
-                obj.__get__(&PROTOTYPE.into(), obj.clone().into(), context)
+                obj.__get__(&Constants::prototype().into(), obj.clone().into(), context)
                     .map(|o| o.as_object())
                     .transpose()
             })

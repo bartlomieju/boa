@@ -4,8 +4,9 @@ mod tests;
 use crate::{
     builtins::BuiltIn,
     gc::{empty_trace, Finalize, Trace},
-    object::{ConstructorBuilder, ObjectData, PROTOTYPE},
+    object::{ConstructorBuilder, ObjectData},
     property::Attribute,
+    string::Constants,
     value::{PreferredType, Value},
     BoaProfiler, Context, Result,
 };
@@ -181,10 +182,10 @@ impl BuiltIn for Date {
             .method(getter_method!(to_iso_string), "toISOString", 0)
             .method(getter_method!(to_json), "toJSON", 0)
             // Locale strings
-            .method(getter_method!(to_string), "toString", 0)
+            .method(getter_method!(to_string), Constants::to_string(), 0)
             .method(getter_method!(to_time_string), "toTimeString", 0)
             .method(getter_method!(to_utc_string), "toUTCString", 0)
-            .method(getter_method!(value_of), "valueOf", 0)
+            .method(getter_method!(value_of), Constants::value_of(), 0)
             .static_method(Self::now, "now", 0)
             .static_method(Self::parse, "parse", 1)
             .static_method(Self::utc, "UTC", 7)
@@ -376,7 +377,7 @@ impl Date {
             let prototype = new_target
                 .as_object()
                 .and_then(|obj| {
-                    obj.__get__(&PROTOTYPE.into(), obj.clone().into(), context)
+                    obj.__get__(&Constants::prototype().into(), obj.clone().into(), context)
                         .map(|o| o.as_object())
                         .transpose()
                 })

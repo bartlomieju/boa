@@ -9,6 +9,79 @@ use std::{
     ptr::{copy_nonoverlapping, NonNull},
 };
 
+thread_local! {
+    static CONSTANTS: Constants = Constants {
+        length: JsString::new("length"),
+        name: JsString::new("name"),
+        message: JsString::new("message"),
+        to_string: JsString::new("toString"),
+        value_of: JsString::new("valueOf"),
+        join: JsString::new("join"),
+        prototype: JsString::new("prototype"),
+        constructor: JsString::new("constructor"),
+        // We have to construct our selfs or it will cause a recursion.
+        empty_string: JsString {
+            inner: Inner::new(""),
+            _marker: PhantomData,
+        },
+    };
+}
+
+#[derive(Debug)]
+pub struct Constants {
+    length: JsString,
+    name: JsString,
+    message: JsString,
+    prototype: JsString,
+    to_string: JsString,
+    join: JsString,
+    value_of: JsString,
+    constructor: JsString,
+    empty_string: JsString,
+}
+
+impl Constants {
+    #[inline]
+    pub fn length() -> JsString {
+        CONSTANTS.with(|constants| constants.length.clone())
+    }
+
+    #[inline]
+    pub fn name() -> JsString {
+        CONSTANTS.with(|constants| constants.name.clone())
+    }
+
+    #[inline]
+    pub fn message() -> JsString {
+        CONSTANTS.with(|constants| constants.message.clone())
+    }
+
+    #[inline]
+    pub fn to_string() -> JsString {
+        CONSTANTS.with(|constants| constants.to_string.clone())
+    }
+
+    #[inline]
+    pub fn value_of() -> JsString {
+        CONSTANTS.with(|constants| constants.value_of.clone())
+    }
+
+    #[inline]
+    pub fn join() -> JsString {
+        CONSTANTS.with(|constants| constants.join.clone())
+    }
+
+    #[inline]
+    pub fn prototype() -> JsString {
+        CONSTANTS.with(|constants| constants.prototype.clone())
+    }
+
+    #[inline]
+    pub fn constructor() -> JsString {
+        CONSTANTS.with(|constants| constants.constructor.clone())
+    }
+}
+
 /// The inner representation of a [`JsString`].
 #[repr(C)]
 struct Inner {
@@ -126,15 +199,25 @@ pub struct JsString {
 impl Default for JsString {
     #[inline]
     fn default() -> Self {
-        Self::new("")
+        CONSTANTS.with(|constants| constants.empty_string.clone())
     }
 }
 
 impl JsString {
+    /// Create an empty string, same as calling default.
+    #[inline]
+    pub fn empty() -> Self {
+        JsString::default()
+    }
+
     /// Create a new JavaScript string.
     #[inline]
     pub fn new<S: AsRef<str>>(s: S) -> Self {
         let s = s.as_ref();
+        if s.is_empty() {
+            return JsString::empty();
+        }
+
         Self {
             inner: Inner::new(s),
             _marker: PhantomData,

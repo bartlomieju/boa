@@ -13,9 +13,10 @@
 
 use crate::{
     builtins::BuiltIn,
-    object::{ConstructorBuilder, ObjectData, PROTOTYPE},
+    object::{ConstructorBuilder, ObjectData},
     profiler::BoaProfiler,
     property::Attribute,
+    string::Constants,
     Context, Result, Value,
 };
 
@@ -43,8 +44,8 @@ impl BuiltIn for SyntaxError {
         .name(Self::NAME)
         .length(Self::LENGTH)
         .inherit(error_prototype.into())
-        .property("name", Self::NAME, attribute)
-        .property("message", "", attribute)
+        .property(Constants::name(), Self::NAME, attribute)
+        .property(Constants::message(), "", attribute)
         .build();
 
         (Self::NAME, syntax_error_object.into(), Self::attribute())
@@ -64,7 +65,7 @@ impl SyntaxError {
         let prototype = new_target
             .as_object()
             .and_then(|obj| {
-                obj.__get__(&PROTOTYPE.into(), obj.clone().into(), context)
+                obj.__get__(&Constants::prototype().into(), obj.clone().into(), context)
                     .map(|o| o.as_object())
                     .transpose()
             })
@@ -75,7 +76,12 @@ impl SyntaxError {
         let this = Value::from(obj);
         if let Some(message) = args.get(0) {
             if !message.is_undefined() {
-                this.set_field("message", message.to_string(context)?, false, context)?;
+                this.set_field(
+                    Constants::message(),
+                    message.to_string(context)?,
+                    false,
+                    context,
+                )?;
             }
         }
 

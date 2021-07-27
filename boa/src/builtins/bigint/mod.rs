@@ -12,13 +12,7 @@
 //! [spec]: https://tc39.es/ecma262/#sec-bigint-objects
 //! [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt
 
-use crate::{
-    builtins::BuiltIn,
-    object::{ConstructorBuilder, ObjectData},
-    property::Attribute,
-    symbol::WellKnownSymbols,
-    BoaProfiler, Context, JsBigInt, Result, Value,
-};
+use crate::{BoaProfiler, Context, JsBigInt, Result, Value, builtins::BuiltIn, object::{ConstructorBuilder, ObjectData}, property::Attribute, string::Constants, symbol::WellKnownSymbols};
 #[cfg(test)]
 mod tests;
 
@@ -45,8 +39,8 @@ impl BuiltIn for BigInt {
         )
         .name(Self::NAME)
         .length(Self::LENGTH)
-        .method(Self::to_string, "toString", 1)
-        .method(Self::value_of, "valueOf", 0)
+        .method(Self::to_string, Constants::to_string(), 1)
+        .method(Self::value_of, Constants::value_of(), 0)
         .static_method(Self::as_int_n, "asIntN", 2)
         .static_method(Self::as_uint_n, "asUintN", 2)
         .callable(true)

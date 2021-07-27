@@ -11,7 +11,6 @@
 //! [spec]: https://tc39.es/ecma262/#sec-function-objects
 //! [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function
 
-use crate::object::PROTOTYPE;
 use crate::{
     builtins::{Array, BuiltIn},
     environment::lexical_environment::Environment,
@@ -20,6 +19,7 @@ use crate::{
     property::{Attribute, DataDescriptor},
     syntax::ast::node::{FormalParameter, RcStatementList},
     BoaProfiler, Context, Result, Value,
+    string::Constants,
 };
 use bitflags::bitflags;
 use std::fmt::{self, Debug};
@@ -183,7 +183,7 @@ pub fn create_unmapped_arguments_object(arguments_list: &[Value]) -> Value {
         Attribute::WRITABLE | Attribute::NON_ENUMERABLE | Attribute::CONFIGURABLE,
     );
     // Define length as a property
-    obj.ordinary_define_own_property("length".into(), length.into());
+    obj.ordinary_define_own_property(Constants::length().into(), length.into());
     let mut index: usize = 0;
     while index < len {
         let val = arguments_list.get(index).expect("Could not get argument");
@@ -238,8 +238,8 @@ pub fn make_builtin_fn<N>(
             .into(),
     );
     let attribute = Attribute::READONLY | Attribute::NON_ENUMERABLE | Attribute::CONFIGURABLE;
-    function.insert_property("length", length, attribute);
-    function.insert_property("name", name.as_str(), attribute);
+    function.insert_property(Constants::length(), length, attribute);
+    function.insert_property(Constants::name(), name.as_str(), attribute);
 
     parent.clone().insert_property(
         name,
@@ -258,7 +258,7 @@ impl BuiltInFunctionObject {
         let prototype = new_target
             .as_object()
             .and_then(|obj| {
-                obj.__get__(&PROTOTYPE.into(), obj.clone().into(), context)
+                obj.__get__(&Constants::prototype().into(), obj.clone().into(), context)
                     .map(|o| o.as_object())
                     .transpose()
             })

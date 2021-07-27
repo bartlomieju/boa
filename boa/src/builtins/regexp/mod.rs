@@ -11,15 +11,7 @@
 
 pub mod regexp_string_iterator;
 
-use crate::{
-    builtins::{array::Array, string, BuiltIn},
-    gc::{empty_trace, Finalize, Trace},
-    object::{ConstructorBuilder, FunctionBuilder, GcObject, ObjectData, PROTOTYPE},
-    property::Attribute,
-    symbol::WellKnownSymbols,
-    value::{IntegerOrInfinity, Value},
-    BoaProfiler, Context, JsString, Result,
-};
+use crate::{BoaProfiler, Context, JsString, Result, builtins::{array::Array, string, BuiltIn}, gc::{empty_trace, Finalize, Trace}, object::{ConstructorBuilder, FunctionBuilder, GcObject, ObjectData}, property::Attribute, string::Constants, symbol::WellKnownSymbols, value::{IntegerOrInfinity, Value}};
 use regexp_string_iterator::RegExpStringIterator;
 use regress::Regex;
 
@@ -139,7 +131,7 @@ impl BuiltIn for RegExp {
         .property("lastIndex", 0, Attribute::all())
         .method(Self::test, "test", 1)
         .method(Self::exec, "exec", 1)
-        .method(Self::to_string, "toString", 0)
+        .method(Self::to_string, Constants::to_string(), 0)
         .method(
             Self::r#match,
             (WellKnownSymbols::match_(), "[Symbol.match]"),
@@ -197,7 +189,7 @@ impl RegExp {
         let prototype = new_target
             .as_object()
             .and_then(|obj| {
-                obj.__get__(&PROTOTYPE.into(), obj.clone().into(), ctx)
+                obj.__get__(&Constants::prototype().into(), obj.clone().into(), ctx)
                     .map(|o| o.as_object())
                     .transpose()
             })
@@ -1192,7 +1184,9 @@ impl RegExp {
         // 14. For each element result of results, do
         for result in results {
             // a. Let resultLength be ? LengthOfArrayLike(result).
-            let result_length = result.get_field("length", context)?.to_length(context)? as isize;
+            let result_length = result
+                .get_field(Constants::length(), context)?
+                .to_length(context)? as isize;
 
             // b. Let nCaptures be max(resultLength - 1, 0).
             let n_captures = std::cmp::max(result_length - 1, 0);
@@ -1531,8 +1525,9 @@ impl RegExp {
                     p = e;
 
                     // 6. Let numberOfCaptures be ? LengthOfArrayLike(z).
-                    let mut number_of_captures =
-                        result.get_field("length", context)?.to_length(context)?;
+                    let mut number_of_captures = result
+                        .get_field(Constants::length(), context)?
+                        .to_length(context)?;
 
                     // 7. Set numberOfCaptures to max(numberOfCaptures - 1, 0).
                     number_of_captures = if number_of_captures == 0 {

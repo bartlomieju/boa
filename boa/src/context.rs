@@ -1,17 +1,10 @@
 //! Javascript context.
 
-use crate::{
-    builtins::{
+use crate::{BoaProfiler, Executable, JsString, Result, Value, builtins::{
         self,
         function::{Function, FunctionFlags, NativeFunction},
         iterable::IteratorPrototypes,
-    },
-    class::{Class, ClassBuilder},
-    exec::Interpreter,
-    object::{FunctionBuilder, GcObject, Object, PROTOTYPE},
-    property::{Attribute, DataDescriptor, PropertyKey},
-    realm::Realm,
-    syntax::{
+    }, class::{Class, ClassBuilder}, exec::Interpreter, object::{FunctionBuilder, GcObject, Object}, property::{Attribute, DataDescriptor, PropertyKey}, realm::Realm, string::Constants, syntax::{
         ast::{
             node::{
                 statement_list::RcStatementList, Call, FormalParameter, Identifier, New,
@@ -20,9 +13,7 @@ use crate::{
             Const, Node,
         },
         Parser,
-    },
-    BoaProfiler, Executable, Result, Value,
-};
+    }};
 
 #[cfg(feature = "console")]
 use crate::builtins::console::Console;
@@ -104,7 +95,7 @@ impl Default for StandardObjects {
             bigint: StandardConstructor::default(),
             number: StandardConstructor::with_prototype(Object::number(0.0)),
             boolean: StandardConstructor::with_prototype(Object::boolean(false)),
-            string: StandardConstructor::with_prototype(Object::string("")),
+            string: StandardConstructor::with_prototype(Object::string(JsString::default())),
             regexp: StandardConstructor::default(),
             symbol: StandardConstructor::default(),
             error: StandardConstructor::default(),
@@ -516,10 +507,10 @@ impl Context {
         let val = Value::from(new_func);
 
         // Set constructor field to the newly created Value (function object)
-        proto.set_field("constructor", val.clone(), false, self)?;
+        proto.set_field(Constants::constructor(), val.clone(), false, self)?;
 
-        val.set_field(PROTOTYPE, proto, false, self)?;
-        val.set_field("length", Value::from(params_len), false, self)?;
+        val.set_field(Constants::prototype(), proto, false, self)?;
+        val.set_field(Constants::length(), Value::from(params_len), false, self)?;
 
         Ok(val)
     }

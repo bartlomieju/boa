@@ -13,6 +13,7 @@ use crate::{
     },
     object::{GcObject, Object, ObjectData},
     property::{Attribute, DataDescriptor, PropertyDescriptor, PropertyKey},
+    string::Constants,
     symbol::{JsSymbol, WellKnownSymbols},
     BoaProfiler, Context, JsBigInt, JsString, Result,
 };
@@ -197,7 +198,7 @@ impl Value {
                     );
                 }
                 new_obj.set_property(
-                    "length",
+                    Constants::length(),
                     // TODO: Fix length attribute
                     DataDescriptor::new(length, Attribute::all()),
                 );
@@ -704,7 +705,7 @@ impl Value {
                 ));
                 // Make sure the correct length is set on our new string object
                 object.insert_property(
-                    PropertyKey::String("length".into()),
+                    PropertyKey::String(Constants::length()),
                     Value::from(string.encode_utf16().count()),
                     Attribute::NON_ENUMERABLE,
                 );

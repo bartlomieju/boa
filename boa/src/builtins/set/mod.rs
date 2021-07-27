@@ -10,13 +10,7 @@
 //! [spec]: https://tc39.es/ecma262/#sec-set-objects
 //! [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set
 
-use crate::{
-    builtins::{iterable::get_iterator, BuiltIn},
-    object::{ConstructorBuilder, FunctionBuilder, ObjectData, PROTOTYPE},
-    property::Attribute,
-    symbol::WellKnownSymbols,
-    BoaProfiler, Context, Result, Value,
-};
+use crate::{BoaProfiler, Context, Result, Value, builtins::{iterable::get_iterator, BuiltIn}, object::{ConstructorBuilder, FunctionBuilder, ObjectData}, property::Attribute, string::Constants, symbol::WellKnownSymbols};
 use ordered_set::OrderedSet;
 
 pub mod set_iterator;
@@ -128,7 +122,7 @@ impl Set {
         let prototype = new_target
             .as_object()
             .and_then(|obj| {
-                obj.__get__(&PROTOTYPE.into(), obj.clone().into(), context)
+                obj.__get__(&Constants::prototype().into(), obj.clone().into(), context)
                     .map(|o| o.as_object())
                     .transpose()
             })
