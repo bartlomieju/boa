@@ -16,7 +16,6 @@ use crate::{
     gc::{empty_trace, Finalize, Trace},
     object::{ConstructorBuilder, FunctionBuilder, GcObject, ObjectData},
     property::Attribute,
-    string::Constants,
     symbol::WellKnownSymbols,
     value::{IntegerOrInfinity, Value},
     BoaProfiler, Context, JsString, Result,
@@ -137,10 +136,10 @@ impl BuiltIn for RegExp {
             None,
             Attribute::CONFIGURABLE,
         )
-        .property(Constants::last_index(), 0, Attribute::all())
+        .property("lastIndex", 0, Attribute::all())
         .method(Self::test, "test", 1)
         .method(Self::exec, "exec", 1)
-        .method(Self::to_string, Constants::to_string(), 0)
+        .method(Self::to_string, "toString", 0)
         .method(
             Self::r#match,
             (WellKnownSymbols::match_(), "[Symbol.match]"),
@@ -198,7 +197,7 @@ impl RegExp {
         let prototype = new_target
             .as_object()
             .and_then(|obj| {
-                obj.__get__(&Constants::prototype().into(), obj.clone().into(), ctx)
+                obj.__get__(&"prototype".into(), obj.clone().into(), ctx)
                     .map(|o| o.as_object())
                     .transpose()
             })
@@ -716,9 +715,7 @@ impl RegExp {
         let length = input.encode_utf16().count();
 
         // 4. Let lastIndex be ℝ(? ToLength(? Get(R, "lastIndex"))).
-        let mut last_index = this
-            .get_field(Constants::last_index(), context)?
-            .to_length(context)?;
+        let mut last_index = this.get_field("lastIndex", context)?.to_length(context)?;
 
         // 5. Let flags be R.[[OriginalFlags]].
         let flags = rx.original_flags;
@@ -748,7 +745,7 @@ impl RegExp {
                 // i. If global is true or sticky is true, then
                 if global || sticky {
                     // 1. Perform ? Set(R, "lastIndex", +0𝔽, true).
-                    this.set_field(Constants::last_index(), 0, true, context)?;
+                    this.set_field("lastIndex", 0, true, context)?;
                 }
 
                 // ii. Return null.
@@ -774,7 +771,7 @@ impl RegExp {
                     // i. If sticky is true, then
                     if sticky {
                         // 1. Perform ? Set(R, "lastIndex", +0𝔽, true).
-                        this.set_field(Constants::last_index(), 0, true, context)?;
+                        this.set_field("lastIndex", 0, true, context)?;
 
                         // 2. Return null.
                         return Ok(Value::null());
@@ -791,7 +788,7 @@ impl RegExp {
                         // i. If sticky is true, then
                         if sticky {
                             // 1. Perform ? Set(R, "lastIndex", +0𝔽, true).
-                            this.set_field(Constants::last_index(), 0, true, context)?;
+                            this.set_field("lastIndex", 0, true, context)?;
 
                             // 2. Return null.
                             return Ok(Value::null());
@@ -823,7 +820,7 @@ impl RegExp {
         // 15. If global is true or sticky is true, then
         if global || sticky {
             // a. Perform ? Set(R, "lastIndex", 𝔽(e), true).
-            this.set_field(Constants::last_index(), e, true, context)?;
+            this.set_field("lastIndex", e, true, context)?;
         }
 
         // 16. Let n be the number of elements in r's captures List. (This is the same value as 22.2.2.1's NcapturingParens.)
@@ -836,7 +833,7 @@ impl RegExp {
         let a = Array::array_create(n + 1, None, context)?;
 
         // 20. Perform ! CreateDataPropertyOrThrow(A, "index", 𝔽(lastIndex)).
-        a.create_data_property_or_throw(Constants::index(), match_value.start(), context)
+        a.create_data_property_or_throw("index", match_value.start(), context)
             .unwrap();
 
         // 21. Perform ! CreateDataPropertyOrThrow(A, "input", S).
@@ -957,7 +954,7 @@ impl RegExp {
             let unicode = this.get_field("unicode", context)?.to_boolean();
 
             // c. Perform ? Set(rx, "lastIndex", +0𝔽, true).
-            this.set_field(Constants::last_index(), 0, true, context)?;
+            this.set_field("lastIndex", 0, true, context)?;
 
             // d. Let A be ! ArrayCreate(0).
             let a = Array::array_create(0, None, context).unwrap();
@@ -991,20 +988,14 @@ impl RegExp {
                     // 3. If matchStr is the empty String, then
                     if match_str.is_empty() {
                         // a. Let thisIndex be ℝ(? ToLength(? Get(rx, "lastIndex"))).
-                        let this_index = this
-                            .get_field(Constants::last_index(), context)?
-                            .to_length(context)?;
+                        let this_index =
+                            this.get_field("lastIndex", context)?.to_length(context)?;
 
                         // b. Let nextIndex be AdvanceStringIndex(S, thisIndex, fullUnicode).
                         let next_index = advance_string_index(arg_str.clone(), this_index, unicode);
 
                         // c. Perform ? Set(rx, "lastIndex", 𝔽(nextIndex), true).
-                        this.set_field(
-                            Constants::last_index(),
-                            Value::from(next_index),
-                            true,
-                            context,
-                        )?;
+                        this.set_field("lastIndex", Value::from(next_index), true, context)?;
                     }
 
                     // 4. Set n to n + 1.
@@ -1083,12 +1074,10 @@ impl RegExp {
         let matcher = RegExp::constructor(&c, &[this.clone(), flags.clone().into()], context)?;
 
         // 7. Let lastIndex be ? ToLength(? Get(R, "lastIndex")).
-        let last_index = this
-            .get_field(Constants::last_index(), context)?
-            .to_length(context)?;
+        let last_index = this.get_field("lastIndex", context)?.to_length(context)?;
 
         // 8. Perform ? Set(matcher, "lastIndex", lastIndex, true).
-        matcher.set_field(Constants::last_index(), last_index, true, context)?;
+        matcher.set_field("lastIndex", last_index, true, context)?;
 
         // 9. If flags contains "g", let global be true.
         // 10. Else, let global be false.
@@ -1150,7 +1139,7 @@ impl RegExp {
         let unicode = this.get_field("unicode", context)?.to_boolean();
         if global {
             // b. Perform ? Set(rx, "lastIndex", +0𝔽, true).
-            this.set_field(Constants::last_index(), 0, true, context)?;
+            this.set_field("lastIndex", 0, true, context)?;
         }
 
         //  9. Let results be a new empty List.
@@ -1181,20 +1170,14 @@ impl RegExp {
                     // 2. If matchStr is the empty String, then
                     if match_str.is_empty() {
                         // a. Let thisIndex be ℝ(? ToLength(? Get(rx, "lastIndex"))).
-                        let this_index = this
-                            .get_field(Constants::last_index(), context)?
-                            .to_length(context)?;
+                        let this_index =
+                            this.get_field("lastIndex", context)?.to_length(context)?;
 
                         // b. Let nextIndex be AdvanceStringIndex(S, thisIndex, fullUnicode).
                         let next_index = advance_string_index(arg_str.clone(), this_index, unicode);
 
                         // c. Perform ? Set(rx, "lastIndex", 𝔽(nextIndex), true).
-                        this.set_field(
-                            Constants::last_index(),
-                            Value::from(next_index),
-                            true,
-                            context,
-                        )?;
+                        this.set_field("lastIndex", Value::from(next_index), true, context)?;
                     }
                 }
             }
@@ -1209,9 +1192,7 @@ impl RegExp {
         // 14. For each element result of results, do
         for result in results {
             // a. Let resultLength be ? LengthOfArrayLike(result).
-            let result_length = result
-                .get_field(Constants::length(), context)?
-                .to_length(context)? as isize;
+            let result_length = result.get_field("length", context)?.to_length(context)? as isize;
 
             // b. Let nCaptures be max(resultLength - 1, 0).
             let n_captures = std::cmp::max(result_length - 1, 0);
@@ -1224,7 +1205,7 @@ impl RegExp {
 
             // e. Let position be ? ToIntegerOrInfinity(? Get(result, "index")).
             let position = result
-                .get_field(Constants::index(), context)?
+                .get_field("index", context)?
                 .to_integer_or_infinity(context)?;
 
             // f. Set position to the result of clamping position between 0 and lengthS.
@@ -1373,28 +1354,24 @@ impl RegExp {
             .to_string(context)?;
 
         // 4. Let previousLastIndex be ? Get(rx, "lastIndex").
-        let previous_last_index = this
-            .get_field(Constants::last_index(), context)?
-            .to_length(context)?;
+        let previous_last_index = this.get_field("lastIndex", context)?.to_length(context)?;
 
         // 5. If SameValue(previousLastIndex, +0𝔽) is false, then
         if previous_last_index != 0 {
             // a. Perform ? Set(rx, "lastIndex", +0𝔽, true).
-            this.set_field(Constants::last_index(), 0, true, context)?;
+            this.set_field("lastIndex", 0, true, context)?;
         }
 
         // 6. Let result be ? RegExpExec(rx, S).
         let result = Self::abstract_exec(this, arg_str, context)?;
 
         // 7. Let currentLastIndex be ? Get(rx, "lastIndex").
-        let current_last_index = this
-            .get_field(Constants::last_index(), context)?
-            .to_length(context)?;
+        let current_last_index = this.get_field("lastIndex", context)?.to_length(context)?;
 
         // 8. If SameValue(currentLastIndex, previousLastIndex) is false, then
         if current_last_index != previous_last_index {
             // a. Perform ? Set(rx, "lastIndex", previousLastIndex, true).
-            this.set_field(Constants::last_index(), previous_last_index, true, context)?;
+            this.set_field("lastIndex", previous_last_index, true, context)?;
         }
 
         // 9. If result is null, return -1𝔽.
@@ -1403,7 +1380,7 @@ impl RegExp {
             Ok(Value::from(-1))
         } else {
             result
-                .get_field(Constants::index(), context)
+                .get_field("index", context)
                 .map_err(|_| context.construct_type_error("Could not find property `index`"))
         }
     }
@@ -1506,7 +1483,7 @@ impl RegExp {
         // 19. Repeat, while q < size,
         while q < size {
             // a. Perform ? Set(splitter, "lastIndex", 𝔽(q), true).
-            splitter.set_field(Constants::last_index(), Value::from(q), true, context)?;
+            splitter.set_field("lastIndex", Value::from(q), true, context)?;
 
             // b. Let z be ? RegExpExec(splitter, S).
             let result = Self::abstract_exec(&splitter, arg_str.clone(), context)?;
@@ -1518,7 +1495,7 @@ impl RegExp {
             } else {
                 // i. Let e be ℝ(? ToLength(? Get(splitter, "lastIndex"))).
                 let mut e = splitter
-                    .get_field(Constants::last_index(), context)?
+                    .get_field("lastIndex", context)?
                     .to_length(context)?;
 
                 // ii. Set e to min(e, size).
@@ -1554,9 +1531,8 @@ impl RegExp {
                     p = e;
 
                     // 6. Let numberOfCaptures be ? LengthOfArrayLike(z).
-                    let mut number_of_captures = result
-                        .get_field(Constants::length(), context)?
-                        .to_length(context)?;
+                    let mut number_of_captures =
+                        result.get_field("length", context)?.to_length(context)?;
 
                     // 7. Set numberOfCaptures to max(numberOfCaptures - 1, 0).
                     number_of_captures = if number_of_captures == 0 {

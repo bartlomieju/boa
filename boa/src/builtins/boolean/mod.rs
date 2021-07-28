@@ -16,7 +16,6 @@ use crate::{
     builtins::BuiltIn,
     object::{ConstructorBuilder, ObjectData},
     property::Attribute,
-    string::Constants,
     BoaProfiler, Context, Result, Value,
 };
 
@@ -42,8 +41,8 @@ impl BuiltIn for Boolean {
         )
         .name(Self::NAME)
         .length(Self::LENGTH)
-        .method(Self::to_string, Constants::to_string(), 0)
-        .method(Self::value_of, Constants::value_of(), 0)
+        .method(Self::to_string, "toString", 0)
+        .method(Self::value_of, "valueOf", 0)
         .build();
 
         (Self::NAME, boolean_object.into(), Self::attribute())
@@ -70,7 +69,7 @@ impl Boolean {
         let prototype = new_target
             .as_object()
             .and_then(|obj| {
-                obj.__get__(&Constants::prototype().into(), obj.clone().into(), context)
+                obj.__get__(&"prototype".into(), obj.clone().into(), context)
                     .map(|o| o.as_object())
                     .transpose()
             })

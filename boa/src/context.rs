@@ -1,10 +1,17 @@
 //! Javascript context.
 
-use crate::{BoaProfiler, Executable, JsString, Result, Value, builtins::{
+use crate::{
+    builtins::{
         self,
         function::{Function, FunctionFlags, NativeFunction},
         iterable::IteratorPrototypes,
-    }, class::{Class, ClassBuilder}, exec::Interpreter, object::{FunctionBuilder, GcObject, Object}, property::{Attribute, DataDescriptor, PropertyKey}, realm::Realm, string::Constants, syntax::{
+    },
+    class::{Class, ClassBuilder},
+    exec::Interpreter,
+    object::{FunctionBuilder, GcObject, Object},
+    property::{Attribute, DataDescriptor, PropertyKey},
+    realm::Realm,
+    syntax::{
         ast::{
             node::{
                 statement_list::RcStatementList, Call, FormalParameter, Identifier, New,
@@ -13,7 +20,9 @@ use crate::{BoaProfiler, Executable, JsString, Result, Value, builtins::{
             Const, Node,
         },
         Parser,
-    }};
+    },
+    BoaProfiler, Executable, JsString, Result, Value,
+};
 
 #[cfg(feature = "console")]
 use crate::builtins::console::Console;
@@ -507,10 +516,10 @@ impl Context {
         let val = Value::from(new_func);
 
         // Set constructor field to the newly created Value (function object)
-        proto.set_field(Constants::constructor(), val.clone(), false, self)?;
+        proto.set_field("constructor", val.clone(), false, self)?;
 
-        val.set_field(Constants::prototype(), proto, false, self)?;
-        val.set_field(Constants::length(), Value::from(params_len), false, self)?;
+        val.set_field("prototype", proto, false, self)?;
+        val.set_field("length", Value::from(params_len), false, self)?;
 
         Ok(val)
     }

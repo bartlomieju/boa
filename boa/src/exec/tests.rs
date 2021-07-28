@@ -666,7 +666,7 @@ fn unary_delete() {
 #[cfg(test)]
 mod in_operator {
     use super::*;
-    use crate::{forward_val, string::Constants};
+    use crate::forward_val;
     #[test]
     fn propery_in_object() {
         let p_in_o = r#"
@@ -782,7 +782,7 @@ mod in_operator {
         let foo_val = forward_val(&mut context, "Foo").unwrap();
         assert!(bar_obj
             .prototype_instance()
-            .strict_equals(&foo_val.get_field(Constants::prototype(), &mut context).unwrap()));
+            .strict_equals(&foo_val.get_field("prototype", &mut context).unwrap()));
     }
 }
 

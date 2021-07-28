@@ -10,7 +10,13 @@
 //! [spec]: https://tc39.es/ecma262/#sec-reflect-object
 //! [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Reflect
 
-use crate::{BoaProfiler, Context, Result, Value, builtins::{self, BuiltIn}, object::{Object, ObjectData, ObjectInitializer}, property::{Attribute, DataDescriptor}, string::Constants, symbol::WellKnownSymbols};
+use crate::{
+    builtins::{self, BuiltIn},
+    object::{Object, ObjectData, ObjectInitializer},
+    property::{Attribute, DataDescriptor},
+    symbol::WellKnownSymbols,
+    BoaProfiler, Context, Result, Value,
+};
 
 #[cfg(test)]
 mod tests;
@@ -298,7 +304,7 @@ impl Reflect {
         let result: Value =
             Object::with_prototype(array_prototype.into(), ObjectData::Array).into();
         result.set_property(
-            Constants::length(),
+            "length",
             DataDescriptor::new(
                 0,
                 Attribute::WRITABLE | Attribute::NON_ENUMERABLE | Attribute::PERMANENT,

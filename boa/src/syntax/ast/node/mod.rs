@@ -47,7 +47,11 @@ pub use self::{
     try_node::{Catch, Finally, Try},
 };
 use super::Const;
-use crate::{BoaProfiler, Context, JsString, Result, Value, exec::Executable, gc::{empty_trace, Finalize, Trace}};
+use crate::{
+    exec::Executable,
+    gc::{empty_trace, Finalize, Trace},
+    BoaProfiler, Context, JsString, Result, Value,
+};
 use std::{
     cmp::Ordering,
     fmt::{self, Display},

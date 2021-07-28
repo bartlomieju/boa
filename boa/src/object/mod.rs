@@ -15,7 +15,6 @@ use crate::{
     context::StandardConstructor,
     gc::{Finalize, Trace},
     property::{AccessorDescriptor, Attribute, DataDescriptor, PropertyDescriptor, PropertyKey},
-    string::Constants,
     BoaProfiler, Context, JsBigInt, JsString, JsSymbol, Value,
 };
 use rustc_hash::FxHashMap;
@@ -758,11 +757,11 @@ impl<'context> FunctionBuilder<'context> {
         );
         let attribute = Attribute::READONLY | Attribute::NON_ENUMERABLE | Attribute::CONFIGURABLE;
         if let Some(name) = self.name.take() {
-            function.insert_property(Constants::name(), name, attribute);
+            function.insert_property("name", name, attribute);
         } else {
-            function.insert_property(Constants::name(), "", attribute);
+            function.insert_property("name", "", attribute);
         }
-        function.insert_property(Constants::length(), self.length, attribute);
+        function.insert_property("length", self.length, attribute);
 
         GcObject::new(function)
     }
@@ -783,11 +782,11 @@ impl<'context> FunctionBuilder<'context> {
         );
         let attribute = Attribute::WRITABLE | Attribute::NON_ENUMERABLE | Attribute::PERMANENT;
         if let Some(name) = self.name.take() {
-            object.insert_property(Constants::name(), name, attribute);
+            object.insert_property("name", name, attribute);
         } else {
-            object.insert_property(Constants::name(), "", attribute);
+            object.insert_property("name", "", attribute);
         }
-        object.insert_property(Constants::length(), self.length, attribute);
+        object.insert_property("length", self.length, attribute);
     }
 }
 
@@ -1137,8 +1136,8 @@ impl<'context> ConstructorBuilder<'context> {
         {
             let mut constructor = self.constructor_object.borrow_mut();
             constructor.data = ObjectData::Function(function);
-            constructor.insert(Constants::length(), length);
-            constructor.insert(Constants::name(), name);
+            constructor.insert("length", length);
+            constructor.insert("name", name);
 
             constructor.set_prototype_instance(
                 self.context
@@ -1149,7 +1148,7 @@ impl<'context> ConstructorBuilder<'context> {
             );
 
             constructor.insert_property(
-                Constants::prototype(),
+                "prototype",
                 self.prototype.clone(),
                 Attribute::READONLY | Attribute::NON_ENUMERABLE | Attribute::PERMANENT,
             );
@@ -1158,7 +1157,7 @@ impl<'context> ConstructorBuilder<'context> {
         {
             let mut prototype = self.prototype.borrow_mut();
             prototype.insert_property(
-                Constants::constructor(),
+                "constructor",
                 self.constructor_object.clone(),
                 Attribute::WRITABLE | Attribute::NON_ENUMERABLE | Attribute::CONFIGURABLE,
             );

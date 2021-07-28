@@ -16,7 +16,6 @@ use crate::{
     gc::{Finalize, Trace},
     object::{GcObject, ObjectData},
     property::{Attribute, DataDescriptor},
-    string::Constants,
     symbol::WellKnownSymbols,
     BoaProfiler, Context, JsString, Result, Value,
 };
@@ -122,7 +121,7 @@ impl RegExpStringIterator {
                     // 1. Let thisIndex be ℝ(? ToLength(? Get(R, "lastIndex"))).
                     let this_index = iterator
                         .matcher
-                        .get_field(Constants::last_index(), context)?
+                        .get_field("lastIndex", context)?
                         .to_length(context)?;
 
                     // 2. Let nextIndex be ! AdvanceStringIndex(S, thisIndex, fullUnicode).
@@ -130,12 +129,9 @@ impl RegExpStringIterator {
                         advance_string_index(iterator.string.clone(), this_index, iterator.unicode);
 
                     // 3. Perform ? Set(R, "lastIndex", 𝔽(nextIndex), true).
-                    iterator.matcher.set_field(
-                        Constants::last_index(),
-                        next_index,
-                        true,
-                        context,
-                    )?;
+                    iterator
+                        .matcher
+                        .set_field("lastIndex", next_index, true, context)?;
                 }
 
                 // vi. Perform ? Yield(match).

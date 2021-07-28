@@ -2,7 +2,6 @@ use crate::{
     builtins::function::FunctionFlags,
     exec::Executable,
     gc::{Finalize, Trace},
-    string::Constants,
     syntax::ast::node::{join_nodes, FormalParameter, Node, StatementList},
     Context, Result, Value,
 };
@@ -107,7 +106,7 @@ impl Executable for FunctionExpr {
         )?;
 
         if let Some(name) = self.name() {
-            val.set_field(Constants::name(), Value::from(name), false, context)?;
+            val.set_field("name", Value::from(name), false, context)?;
         }
 
         Ok(val)

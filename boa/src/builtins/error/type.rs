@@ -19,7 +19,6 @@ use crate::{
     builtins::BuiltIn,
     object::{ConstructorBuilder, ObjectData},
     property::Attribute,
-    string::Constants,
     BoaProfiler, Context, Result, Value,
 };
 
@@ -47,8 +46,8 @@ impl BuiltIn for TypeError {
         .name(Self::NAME)
         .length(Self::LENGTH)
         .inherit(error_prototype.into())
-        .property(Constants::name(), Self::NAME, attribute)
-        .property(Constants::message(), "", attribute)
+        .property("name", Self::NAME, attribute)
+        .property("message", "", attribute)
         .build();
 
         (Self::NAME, type_error_object.into(), Self::attribute())
@@ -68,7 +67,7 @@ impl TypeError {
         let prototype = new_target
             .as_object()
             .and_then(|obj| {
-                obj.__get__(&Constants::prototype().into(), obj.clone().into(), context)
+                obj.__get__(&"prototype".into(), obj.clone().into(), context)
                     .map(|o| o.as_object())
                     .transpose()
             })
@@ -79,12 +78,7 @@ impl TypeError {
         let this = Value::from(obj);
         if let Some(message) = args.get(0) {
             if !message.is_undefined() {
-                this.set_field(
-                    Constants::message(),
-                    message.to_string(context)?,
-                    false,
-                    context,
-                )?;
+                this.set_field("message", message.to_string(context)?, false, context)?;
             }
         }
 

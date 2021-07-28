@@ -13,9 +13,16 @@
 //! [spec]: https://tc39.es/ecma262/#sec-objects
 //! [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object
 
-use crate::{BoaProfiler, Context, Result, builtins::BuiltIn, object::{
-        ConstructorBuilder, Object as BuiltinObject, ObjectData, ObjectInitializer,
-    }, property::Attribute, property::DataDescriptor, property::PropertyDescriptor, string::Constants, symbol::WellKnownSymbols, value::{Type, Value}};
+use crate::{
+    builtins::BuiltIn,
+    object::{ConstructorBuilder, Object as BuiltinObject, ObjectData, ObjectInitializer},
+    property::Attribute,
+    property::DataDescriptor,
+    property::PropertyDescriptor,
+    symbol::WellKnownSymbols,
+    value::{Type, Value},
+    BoaProfiler, Context, Result,
+};
 
 pub mod for_in_iterator;
 #[cfg(test)]
@@ -45,7 +52,7 @@ impl BuiltIn for Object {
         .inherit(Value::null())
         .method(Self::has_own_property, "hasOwnProperty", 0)
         .method(Self::property_is_enumerable, "propertyIsEnumerable", 0)
-        .method(Self::to_string, Constants::to_string(), 0)
+        .method(Self::to_string, "toString", 0)
         .method(Self::is_prototype_of, "isPrototypeOf", 0)
         .static_method(Self::create, "create", 2)
         .static_method(Self::set_prototype_of, "setPrototypeOf", 2)
@@ -78,7 +85,7 @@ impl Object {
             let prototype = new_target
                 .as_object()
                 .and_then(|obj| {
-                    obj.__get__(&Constants::prototype().into(), obj.clone().into(), context)
+                    obj.__get__(&"prototype".into(), obj.clone().into(), context)
                         .map(|o| o.as_object())
                         .transpose()
                 })

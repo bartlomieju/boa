@@ -22,7 +22,6 @@ use crate::{
     builtins::BuiltIn,
     object::{ConstructorBuilder, FunctionBuilder},
     property::Attribute,
-    string::Constants,
     symbol::{JsSymbol, WellKnownSymbols},
     value::Value,
     BoaProfiler, Context, JsString, Result,
@@ -126,7 +125,7 @@ impl BuiltIn for Symbol {
         .static_property("toPrimitive", symbol_to_primitive, attribute)
         .static_property("toStringTag", symbol_to_string_tag.clone(), attribute)
         .static_property("unscopables", symbol_unscopables, attribute)
-        .method(Self::to_string, Constants::to_string(), 0)
+        .method(Self::to_string, "toString", 0)
         .accessor(
             "description",
             Some(get_description),

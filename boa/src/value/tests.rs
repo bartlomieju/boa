@@ -1,7 +1,6 @@
 #![allow(clippy::float_cmp)]
 
 use super::*;
-use crate::string::Constants;
 use crate::{forward, forward_val, Context};
 
 use std::collections::hash_map::DefaultHasher;
@@ -268,7 +267,7 @@ fn string_length_is_not_enumerable() {
 
     let object = Value::from("foo").to_object(&mut context).unwrap();
     let length_desc = object
-        .__get_own_property__(&PropertyKey::from(Constants::length()))
+        .__get_own_property__(&PropertyKey::from("length"))
         .unwrap();
     assert!(!length_desc.enumerable());
 }
@@ -280,7 +279,7 @@ fn string_length_is_in_utf16_codeunits() {
     // 😀 is one Unicode code point, but 2 UTF-16 code units
     let object = Value::from("😀").to_object(&mut context).unwrap();
     let length_desc = object
-        .__get_own_property__(&PropertyKey::from(Constants::length()))
+        .__get_own_property__(&PropertyKey::from("length"))
         .unwrap();
     assert_eq!(
         length_desc

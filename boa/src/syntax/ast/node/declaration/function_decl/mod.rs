@@ -3,7 +3,6 @@ use crate::{
     environment::lexical_environment::VariableScope,
     exec::Executable,
     gc::{Finalize, Trace},
-    string::Constants,
     syntax::ast::node::{join_nodes, FormalParameter, Node, StatementList},
     BoaProfiler, Context, JsString, Result, Value,
 };
@@ -96,7 +95,7 @@ impl Executable for FunctionDecl {
         )?;
 
         // Set the name and assign it in the current environment
-        val.set_field(Constants::name(), self.name(), false, context)?;
+        val.set_field("name", self.name(), false, context)?;
 
         if context.has_binding(self.name()) {
             context.set_mutable_binding(self.name(), val, true)?;

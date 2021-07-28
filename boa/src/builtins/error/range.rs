@@ -9,7 +9,13 @@
 //! [spec]: https://tc39.es/ecma262/#sec-native-error-types-used-in-this-standard-rangeerror
 //! [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RangeError
 
-use crate::{Context, Result, Value, builtins::BuiltIn, object::{ConstructorBuilder, ObjectData}, profiler::BoaProfiler, property::Attribute, string::Constants};
+use crate::{
+    builtins::BuiltIn,
+    object::{ConstructorBuilder, ObjectData},
+    profiler::BoaProfiler,
+    property::Attribute,
+    Context, Result, Value,
+};
 
 /// JavaScript `RangeError` implementation.
 #[derive(Debug, Clone, Copy)]
@@ -35,8 +41,8 @@ impl BuiltIn for RangeError {
         .name(Self::NAME)
         .length(Self::LENGTH)
         .inherit(error_prototype.into())
-        .property(Constants::name(), Self::NAME, attribute)
-        .property(Constants::message(), "", attribute)
+        .property("name", Self::NAME, attribute)
+        .property("message", "", attribute)
         .build();
 
         (Self::NAME, range_error_object.into(), Self::attribute())
@@ -56,7 +62,7 @@ impl RangeError {
         let prototype = new_target
             .as_object()
             .and_then(|obj| {
-                obj.__get__(&Constants::prototype().into(), obj.clone().into(), context)
+                obj.__get__(&"prototype".into(), obj.clone().into(), context)
                     .map(|o| o.as_object())
                     .transpose()
             })
@@ -67,7 +73,7 @@ impl RangeError {
         let this = Value::from(obj);
         if let Some(message) = args.get(0) {
             if !message.is_undefined() {
-                this.set_field(Constants::message(), message.to_string(context)?, false, context)?;
+                this.set_field("message", message.to_string(context)?, false, context)?;
             }
         }
 

@@ -17,7 +17,6 @@ use crate::{
     gc::{empty_trace, Finalize, Trace},
     object::{ConstructorBuilder, FunctionBuilder, GcObject, Object, ObjectData},
     property::{Attribute, DataDescriptor},
-    string::Constants,
     syntax::ast::node::{FormalParameter, RcStatementList},
     BoaProfiler, Context, Result, Value,
 };
@@ -183,7 +182,7 @@ pub fn create_unmapped_arguments_object(arguments_list: &[Value]) -> Value {
         Attribute::WRITABLE | Attribute::NON_ENUMERABLE | Attribute::CONFIGURABLE,
     );
     // Define length as a property
-    obj.ordinary_define_own_property(Constants::length().into(), length.into());
+    obj.ordinary_define_own_property("length".into(), length.into());
     let mut index: usize = 0;
     while index < len {
         let val = arguments_list.get(index).expect("Could not get argument");
@@ -238,8 +237,8 @@ pub fn make_builtin_fn<N>(
             .into(),
     );
     let attribute = Attribute::READONLY | Attribute::NON_ENUMERABLE | Attribute::CONFIGURABLE;
-    function.insert_property(Constants::length(), length, attribute);
-    function.insert_property(Constants::name(), name.as_str(), attribute);
+    function.insert_property("length", length, attribute);
+    function.insert_property("name", name.as_str(), attribute);
 
     parent.clone().insert_property(
         name,
@@ -258,7 +257,7 @@ impl BuiltInFunctionObject {
         let prototype = new_target
             .as_object()
             .and_then(|obj| {
-                obj.__get__(&Constants::prototype().into(), obj.clone().into(), context)
+                obj.__get__(&"prototype".into(), obj.clone().into(), context)
                     .map(|o| o.as_object())
                     .transpose()
             })

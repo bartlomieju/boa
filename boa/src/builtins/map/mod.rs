@@ -16,7 +16,6 @@ use crate::{
     builtins::BuiltIn,
     object::{ConstructorBuilder, FunctionBuilder, ObjectData},
     property::{Attribute, DataDescriptor},
-    string::Constants,
     symbol::WellKnownSymbols,
     BoaProfiler, Context, Result, Value,
 };
@@ -119,7 +118,7 @@ impl Map {
         let prototype = new_target
             .as_object()
             .and_then(|obj| {
-                obj.__get__(&Constants::prototype().into(), obj.clone().into(), context)
+                obj.__get__(&"prototype".into(), obj.clone().into(), context)
                     .map(|o| o.as_object())
                     .transpose()
             })
@@ -140,9 +139,7 @@ impl Map {
                         map
                     } else if object.is_array() {
                         let mut map = OrderedMap::new();
-                        let len = args[0]
-                            .get_field(Constants::length(), context)?
-                            .to_integer(context)? as i32;
+                        let len = args[0].get_field("length", context)?.to_integer(context)? as i32;
                         for i in 0..len {
                             let val = &args[0].get_field(i, context)?;
                             let (key, value) =
@@ -465,15 +462,12 @@ impl Map {
     fn get_key_value(value: &Value, context: &mut Context) -> Result<Option<(Value, Value)>> {
         if let Value::Object(object) = value {
             if object.is_array() {
-                let (key, value) = match value
-                    .get_field(Constants::length(), context)?
-                    .as_number()
-                    .unwrap() as i32
-                {
-                    0 => (Value::Undefined, Value::Undefined),
-                    1 => (value.get_field(0, context)?, Value::Undefined),
-                    _ => (value.get_field(0, context)?, value.get_field(1, context)?),
-                };
+                let (key, value) =
+                    match value.get_field("length", context)?.as_number().unwrap() as i32 {
+                        0 => (Value::Undefined, Value::Undefined),
+                        1 => (value.get_field(0, context)?, Value::Undefined),
+                        _ => (value.get_field(0, context)?, value.get_field(1, context)?),
+                    };
                 return Ok(Some((key, value)));
             }
         }

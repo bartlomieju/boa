@@ -13,7 +13,6 @@ use crate::{
     },
     object::{GcObject, Object, ObjectData},
     property::{Attribute, DataDescriptor, PropertyDescriptor, PropertyKey},
-    string::Constants,
     symbol::{JsSymbol, WellKnownSymbols},
     BoaProfiler, Context, JsBigInt, JsString, Result,
 };
@@ -198,7 +197,7 @@ impl Value {
                     );
                 }
                 new_obj.set_property(
-                    Constants::length(),
+                    "length",
                     // TODO: Fix length attribute
                     DataDescriptor::new(length, Attribute::all()),
                 );
@@ -224,7 +223,7 @@ impl Value {
 
     /// Converts the `Value` to `JSON`.
     pub fn to_json(&self, context: &mut Context) -> Result<Option<JSONValue>> {
-        let to_json = self.get_field(Constants::to_json(), context)?;
+        let to_json = self.get_field("toJSON", context)?;
         if to_json.is_function() {
             let json_value = context.call(&to_json, self, &[])?;
             return json_value.to_json(context);
@@ -705,8 +704,8 @@ impl Value {
                 ));
                 // Make sure the correct length is set on our new string object
                 object.insert_property(
-                    PropertyKey::String(Constants::length()),
-                    Value::from(string.encode_utf16().count()),
+                    "length",
+                    string.encode_utf16().count(),
                     Attribute::NON_ENUMERABLE,
                 );
                 Ok(object)

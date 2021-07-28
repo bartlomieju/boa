@@ -15,7 +15,6 @@ use crate::{
     object::{ConstructorBuilder, ObjectData},
     profiler::BoaProfiler,
     property::Attribute,
-    string::Constants,
     Context, Result, Value,
 };
 
@@ -58,9 +57,9 @@ impl BuiltIn for Error {
         )
         .name(Self::NAME)
         .length(Self::LENGTH)
-        .property(Constants::name(), Self::NAME, attribute)
-        .property(Constants::message(), "", attribute)
-        .method(Self::to_string, Constants::to_string(), 0)
+        .property("name", Self::NAME, attribute)
+        .property("message", "", attribute)
+        .method(Self::to_string, "toString", 0)
         .build();
 
         (Self::NAME, error_object.into(), Self::attribute())
@@ -82,7 +81,7 @@ impl Error {
         let prototype = new_target
             .as_object()
             .and_then(|obj| {
-                obj.__get__(&Constants::prototype().into(), obj.clone().into(), context)
+                obj.__get__(&"prototype".into(), obj.clone().into(), context)
                     .map(|o| o.as_object())
                     .transpose()
             })
@@ -93,7 +92,7 @@ impl Error {
         let this = Value::from(obj);
         if let Some(message) = args.get(0) {
             if !message.is_undefined() {
-                this.set_field(Constants::message(), message.to_string(context)?, false, context)?;
+                this.set_field("message", message.to_string(context)?, false, context)?;
             }
         }
 
@@ -118,7 +117,7 @@ impl Error {
         if !this.is_object() {
             return context.throw_type_error("'this' is not an Object");
         }
-        let name = this.get_field(Constants::name(), context)?;
+        let name = this.get_field("name", context)?;
         let name_to_string;
         let name = if name.is_undefined() {
             "Error"
@@ -127,7 +126,7 @@ impl Error {
             name_to_string.as_str()
         };
 
-        let message = this.get_field(Constants::message(), context)?;
+        let message = this.get_field("message", context)?;
         let message_to_string;
         let message = if message.is_undefined() {
             ""

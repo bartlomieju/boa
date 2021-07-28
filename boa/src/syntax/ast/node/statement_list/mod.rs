@@ -1,6 +1,11 @@
 //! Statement list node.
 
-use crate::{BoaProfiler, Context, JsString, Result, Value, exec::{Executable, InterpreterState}, gc::{empty_trace, Finalize, Trace}, syntax::ast::node::Node};
+use crate::{
+    exec::{Executable, InterpreterState},
+    gc::{empty_trace, Finalize, Trace},
+    syntax::ast::node::Node,
+    BoaProfiler, Context, JsString, Result, Value,
+};
 use std::{collections::HashSet, fmt, ops::Deref, rc::Rc};
 
 #[cfg(feature = "deser")]

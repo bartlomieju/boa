@@ -9,115 +9,67 @@ use std::{
     ptr::{copy_nonoverlapping, NonNull},
 };
 
+use rustc_hash::FxHashSet;
 #[cfg(feature = "deser")]
 use serde::{Deserialize, Serialize};
 
+const CONSTANTS_ARRAY: [&str; 26] = [
+    "",
+    "Array",
+    "Object",
+    "String",
+    "Number",
+    "Boolean",
+    "RegExp",
+    "Symbol",
+    "exec",
+    "test",
+    "Map",
+    "Set",
+    "pop",
+    "push",
+    "concat",
+    "length",
+    "name",
+    "lastIndex",
+    "index",
+    "arguments",
+    "message",
+    "toString",
+    "valueOf",
+    "toJSON",
+    "prototype",
+    "constructor",
+];
+
+const MAX_CONSTANT_STRING_LENGTH: usize = {
+    let mut max = 0;
+    let mut i = 0;
+    while i < CONSTANTS_ARRAY.len() {
+        let len = CONSTANTS_ARRAY[i].len();
+        if len > max {
+            max = len;
+        }
+        i += 1;
+    }
+    max
+};
+
 thread_local! {
-    static CONSTANTS: Constants = Constants {
-        length: JsString::new("length"),
-        name: JsString::new("name"),
-        message: JsString::new("message"),
-        to_string: JsString::new("toString"),
-        value_of: JsString::new("valueOf"),
-        join: JsString::new("join"),
-        arguments: JsString::new("arguments"),
-        last_index: JsString::new("lastIndex"),
-        index: JsString::new("index"),
-        to_json: JsString::new("toJSON"),
-        concat: JsString::new("concat"),
-        prototype: JsString::new("prototype"),
-        constructor: JsString::new("constructor"),
-        // We have to construct our selfs or it will cause a recursion.
-        empty_string: JsString {
-            inner: Inner::new(""),
-            _marker: PhantomData,
-        },
+    static CONSTANTS: FxHashSet<JsString> = {
+        let mut constants = FxHashSet::default();
+
+        for s in CONSTANTS_ARRAY.iter() {
+            let s = JsString {
+                inner: Inner::new(s),
+                _marker: PhantomData,
+            };
+            let inserted = constants.insert(s);
+            debug_assert!(inserted);
+        }
+
+        constants
     };
-}
-
-#[derive(Debug)]
-pub struct Constants {
-    length: JsString,
-    name: JsString,
-    message: JsString,
-    prototype: JsString,
-    to_string: JsString,
-    join: JsString,
-    value_of: JsString,
-    arguments: JsString,
-    last_index: JsString,
-    index: JsString,
-    to_json: JsString,
-    concat: JsString,
-    constructor: JsString,
-    empty_string: JsString,
-}
-
-impl Constants {
-    #[inline]
-    pub fn length() -> JsString {
-        CONSTANTS.with(|constants| constants.length.clone())
-    }
-
-    #[inline]
-    pub fn name() -> JsString {
-        CONSTANTS.with(|constants| constants.name.clone())
-    }
-
-    #[inline]
-    pub fn message() -> JsString {
-        CONSTANTS.with(|constants| constants.message.clone())
-    }
-
-    #[inline]
-    pub fn to_string() -> JsString {
-        CONSTANTS.with(|constants| constants.to_string.clone())
-    }
-
-    #[inline]
-    pub fn value_of() -> JsString {
-        CONSTANTS.with(|constants| constants.value_of.clone())
-    }
-
-    #[inline]
-    pub fn join() -> JsString {
-        CONSTANTS.with(|constants| constants.join.clone())
-    }
-
-    #[inline]
-    pub fn arguments() -> JsString {
-        CONSTANTS.with(|constants| constants.arguments.clone())
-    }
-
-    #[inline]
-    pub fn last_index() -> JsString {
-        CONSTANTS.with(|constants| constants.last_index.clone())
-    }
-
-    #[inline]
-    pub fn index() -> JsString {
-        CONSTANTS.with(|constants| constants.index.clone())
-    }
-
-    #[inline]
-    pub fn to_json() -> JsString {
-        CONSTANTS.with(|constants| constants.to_json.clone())
-    }
-
-    #[inline]
-    pub fn concat() -> JsString {
-        CONSTANTS.with(|constants| constants.concat.clone())
-    }
-
-    #[inline]
-    pub fn prototype() -> JsString {
-        CONSTANTS.with(|constants| constants.prototype.clone())
-    }
-
-    #[inline]
-    pub fn constructor() -> JsString {
-        CONSTANTS.with(|constants| constants.constructor.clone())
-    }
 }
 
 /// The inner representation of a [`JsString`].
@@ -237,7 +189,7 @@ pub struct JsString {
 impl Default for JsString {
     #[inline]
     fn default() -> Self {
-        CONSTANTS.with(|constants| constants.empty_string.clone())
+        JsString::new("")
     }
 }
 
@@ -252,8 +204,11 @@ impl JsString {
     #[inline]
     pub fn new<S: AsRef<str>>(s: S) -> Self {
         let s = s.as_ref();
-        if s.is_empty() {
-            return JsString::empty();
+
+        if s.len() <= MAX_CONSTANT_STRING_LENGTH {
+            if let Some(constant) = CONSTANTS.with(|c| c.get(s).cloned()) {
+                return constant;
+            }
         }
 
         Self {

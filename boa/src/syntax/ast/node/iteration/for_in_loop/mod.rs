@@ -119,10 +119,7 @@ impl Executable for ForInLoop {
                             true,
                             VariableScope::Function,
                         )?;
-                        context.initialize_binding(
-                            name.as_string(),
-                            next_result.clone(),
-                        )?;
+                        context.initialize_binding(name.as_string(), next_result.clone())?;
                     }
                 }
                 Node::VarDeclList(ref list) => match list.as_ref() {
