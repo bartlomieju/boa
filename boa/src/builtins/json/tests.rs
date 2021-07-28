@@ -342,7 +342,7 @@ fn json_parse_array_with_reviver() {
     .unwrap();
     assert_eq!(
         result
-            .get_field("0", &mut context)
+            .get_field(0, &mut context)
             .unwrap()
             .to_number(&mut context)
             .unwrap() as u8,

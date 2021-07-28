@@ -109,7 +109,7 @@ impl BuiltIn for String {
         .method(Self::char_code_at, "charCodeAt", 1)
         .method(Self::code_point_at, "codePointAt", 1)
         .method(Self::to_string, Constants::to_string(), 0)
-        .method(Self::concat, "concat", 1)
+        .method(Self::concat, Constants::concat(), 1)
         .method(Self::repeat, "repeat", 1)
         .method(Self::slice, "slice", 2)
         .method(Self::starts_with, "startsWith", 1)

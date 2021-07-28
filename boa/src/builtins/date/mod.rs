@@ -180,7 +180,7 @@ impl BuiltIn for Date {
             .method(getter_method!(to_date_string), "toDateString", 0)
             .method(getter_method!(to_gmt_string), "toGMTString", 0)
             .method(getter_method!(to_iso_string), "toISOString", 0)
-            .method(getter_method!(to_json), "toJSON", 0)
+            .method(getter_method!(to_json), Constants::to_json(), 0)
             // Locale strings
             .method(getter_method!(to_string), Constants::to_string(), 0)
             .method(getter_method!(to_time_string), "toTimeString", 0)

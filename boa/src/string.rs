@@ -21,6 +21,10 @@ thread_local! {
         value_of: JsString::new("valueOf"),
         join: JsString::new("join"),
         arguments: JsString::new("arguments"),
+        last_index: JsString::new("lastIndex"),
+        index: JsString::new("index"),
+        to_json: JsString::new("toJSON"),
+        concat: JsString::new("concat"),
         prototype: JsString::new("prototype"),
         constructor: JsString::new("constructor"),
         // We have to construct our selfs or it will cause a recursion.
@@ -41,6 +45,10 @@ pub struct Constants {
     join: JsString,
     value_of: JsString,
     arguments: JsString,
+    last_index: JsString,
+    index: JsString,
+    to_json: JsString,
+    concat: JsString,
     constructor: JsString,
     empty_string: JsString,
 }
@@ -79,6 +87,26 @@ impl Constants {
     #[inline]
     pub fn arguments() -> JsString {
         CONSTANTS.with(|constants| constants.arguments.clone())
+    }
+
+    #[inline]
+    pub fn last_index() -> JsString {
+        CONSTANTS.with(|constants| constants.last_index.clone())
+    }
+
+    #[inline]
+    pub fn index() -> JsString {
+        CONSTANTS.with(|constants| constants.index.clone())
+    }
+
+    #[inline]
+    pub fn to_json() -> JsString {
+        CONSTANTS.with(|constants| constants.to_json.clone())
+    }
+
+    #[inline]
+    pub fn concat() -> JsString {
+        CONSTANTS.with(|constants| constants.concat.clone())
     }
 
     #[inline]

@@ -224,7 +224,7 @@ impl Value {
 
     /// Converts the `Value` to `JSON`.
     pub fn to_json(&self, context: &mut Context) -> Result<Option<JSONValue>> {
-        let to_json = self.get_field("toJSON", context)?;
+        let to_json = self.get_field(Constants::to_json(), context)?;
         if to_json.is_function() {
             let json_value = context.call(&to_json, self, &[])?;
             return json_value.to_json(context);
