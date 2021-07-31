@@ -67,6 +67,14 @@ pub mod bytecompiler;
 #[cfg(feature = "vm")]
 pub mod vm;
 
+/// A convenience module that re-exports the most commonly-used Boa APIs
+pub mod prelude {
+    pub use crate::{
+        bigint::JsBigInt, object::GcObject as JsObject, string::JsString, value::Value as JsValue,
+        Context, Result as JsResult,
+    };
+}
+
 use std::result::Result as StdResult;
 
 pub(crate) use crate::{exec::Executable, profiler::BoaProfiler};
